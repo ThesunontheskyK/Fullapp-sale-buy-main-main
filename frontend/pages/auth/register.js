@@ -74,7 +74,7 @@ export default function Register({ navigation }) {
         <View className="w-full mt-6 h-auto px-2 gap-5">
           <View className="w-full h-auto flex gap-1">
             <Text className="text-sm text-black/70 font-bold"> ขั้นตอนที่ 1 จาก 2 </Text>
-            <Text className="font-bold text-[18px] text-black/70"> สร้างรหัสผ่านเพื่อเริ่มต้นการเป็นสมาชิคของคุณ</Text>
+            <Text className="font-bold text-[18px] text-black/70"> สร้างรหัสผ่านเพื่อเริ่มต้นการเป็นสมาชิคของ</Text>
             <Text className="font-bold text-sm text-black/70">เหลืออีกเพียงไม่กี่ขั้นตอนของคุณก็เสร็จสิ้นแล้ว</Text>
           </View>
 
