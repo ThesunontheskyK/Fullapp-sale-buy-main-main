@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(dir \"C:\\Users\\Knight\\Desktop\\SavePro\\Fullapp-sale-buy-main-main\" /s /B)",
+      "Read(//c/**)",
+      "Bash(mkdir:*)",
+      "Bash(npm init -y)",
+      "Bash(npm install:*)",
+      "Bash(dir:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

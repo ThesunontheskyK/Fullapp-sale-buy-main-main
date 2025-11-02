@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SavePro API Tester</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .config {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .config-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .config-group label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .config-group input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .config-group button {
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .config-group button:hover {
+            background: #218838;
+        }
+
+        .auth-status {
+            padding: 15px 30px;
+            background: #fff3cd;
+            border-bottom: 2px solid #ffc107;
+            display: none;
+        }
+
+        .auth-status.active {
+            display: block;
+        }
+
+        .auth-status.logged-in {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e9ecef;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            color: #495057;
+            background: #f8f9fa;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #dee2e6;
+        }
+
+        .result h4 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .result pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #212529;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #667eea;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge.get {
+            background: #28a745;
+        }
+
+        .badge.post {
+            background: #007bff;
+        }
+
+        .badge.put {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .badge.delete {
+            background: #dc3545;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 0;
+            }
+
+            .content {
+                padding: 15px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>SavePro API Tester</h1>
+            <p>ทดสอบ API ของระบบซื้อขาย</p>
+        </div>
+
+        <div class="config">
+            <div class="config-group">
+                <label>API URL:</label>
+                <input type="text" id="apiUrl" value="http://localhost:5000">
+                <button onclick="saveConfig()">บันทึก</button>
+            </div>
+        </div>
+
+        <div class="auth-status" id="authStatus">
+            <strong>สถานะ:</strong> <span id="statusText">ยังไม่ได้เข้าสู่ระบบ</span>
+            <span id="userInfo"></span>
+            <button class="btn btn-danger" onclick="logout()" style="margin-left: 15px; padding: 8px 16px;">ออกจากระบบ</button>
+        </div>
+
+        <div class="content">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('auth')">Authentication</button>
+                <button class="tab" onclick="switchTab('profile')">Profile</button>
+                <button class="tab" onclick="switchTab('chatrooms')">Chat Rooms</button>
+                <button class="tab" onclick="switchTab('messages')">Messages</button>
+                <button class="tab" onclick="switchTab('transactions')">Transactions</button>
+            </div>
+
+            <!-- Authentication Tab -->
+            <div class="tab-content active" id="auth">
+                <div class="grid">
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> ลงทะเบียน</h3>
+                        <div class="form-group">
+                            <label>Username:</label>
+                            <input type="text" id="regUsername" placeholder="username123">
+                        </div>
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <input type="email" id="regEmail" placeholder="user@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="regPassword" placeholder="********">
+                        </div>
+                        <div class="form-group">
+                            <label>Full Name:</label>
+                            <input type="text" id="regFullName" placeholder="ชื่อ-นามสกุล">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number:</label>
+                            <input type="text" id="regPhoneNumber" placeholder="0812345678">
+                        </div>
+                        <button class="btn" onclick="register()">ลงทะเบียน</button>
+                        <div class="result" id="regResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="regResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> เข้าสู่ระบบ</h3>
+                        <div class="form-group">
+                            <label>Email:</label>
+                            <input type="email" id="loginEmail" placeholder="user@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Password:</label>
+                            <input type="password" id="loginPassword" placeholder="********">
+                        </div>
+                        <button class="btn btn-success" onclick="login()">เข้าสู่ระบบ</button>
+                        <div class="result" id="loginResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="loginResultData"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div class="tab-content" id="profile">
+                <div class="grid">
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงข้อมูลโปรไฟล์</h3>
+                        <button class="btn" onclick="getProfile()">ดึงข้อมูล</button>
+                        <div class="result" id="profileResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="profileResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge put">PUT</span> อัพเดทโปรไฟล์</h3>
+                        <div class="form-group">
+                            <label>Full Name:</label>
+                            <input type="text" id="updateFullName" placeholder="ชื่อ-นามสกุล">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number:</label>
+                            <input type="text" id="updatePhoneNumber" placeholder="0812345678">
+                        </div>
+                        <div class="form-group">
+                            <label>Profile Image URL:</label>
+                            <input type="text" id="updateProfileImage" placeholder="https://example.com/image.jpg">
+                        </div>
+                        <button class="btn" onclick="updateProfile()">อัพเดท</button>
+                        <div class="result" id="updateProfileResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="updateProfileResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge put">PUT</span> เปลี่ยนรหัสผ่าน</h3>
+                        <div class="form-group">
+                            <label>Current Password:</label>
+                            <input type="password" id="currentPassword" placeholder="********">
+                        </div>
+                        <div class="form-group">
+                            <label>New Password:</label>
+                            <input type="password" id="newPassword" placeholder="********">
+                        </div>
+                        <button class="btn" onclick="changePassword()">เปลี่ยนรหัสผ่าน</button>
+                        <div class="result" id="changePasswordResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="changePasswordResultData"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Rooms Tab -->
+            <div class="tab-content" id="chatrooms">
+                <div class="grid">
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> สร้างห้องแชท</h3>
+                        <div class="form-group">
+                            <label>Other User ID:</label>
+                            <input type="text" id="otherUserId" placeholder="User ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Role:</label>
+                            <select id="role">
+                                <option value="buyer">Buyer</option>
+                                <option value="seller">Seller</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Product Name (Optional):</label>
+                            <input type="text" id="productName" placeholder="ชื่อสินค้า">
+                        </div>
+                        <button class="btn" onclick="createChatRoom()">สร้างห้อง</button>
+                        <div class="result" id="createRoomResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="createRoomResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงรายการห้องแชท</h3>
+                        <button class="btn" onclick="getChatRooms()">ดึงรายการ</button>
+                        <div class="result" id="roomsResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="roomsResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงข้อมูลห้องแชท</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="getRoomId" placeholder="Room ID">
+                        </div>
+                        <button class="btn" onclick="getChatRoom()">ดึงข้อมูล</button>
+                        <div class="result" id="getRoomResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getRoomResultData"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Tab -->
+            <div class="tab-content" id="messages">
+                <div class="grid">
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> ส่งข้อความ</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="msgRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Message:</label>
+                            <textarea id="message" placeholder="พิมพ์ข้อความที่นี่..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Message Type:</label>
+                            <select id="messageType">
+                                <option value="text">Text</option>
+                                <option value="image">Image</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="sendMessage()">ส่งข้อความ</button>
+                        <div class="result" id="sendMsgResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="sendMsgResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> ส่งรูปภาพ</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="imgRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Message (Optional):</label>
+                            <input type="text" id="imgMessage" placeholder="คำอธิบายรูป">
+                        </div>
+                        <div class="form-group">
+                            <label>Image File:</label>
+                            <input type="file" id="chatImage" accept="image/*">
+                        </div>
+                        <button class="btn" onclick="sendImage()">ส่งรูปภาพ</button>
+                        <div class="result" id="sendImgResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="sendImgResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงข้อความ</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="getMsgRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Page:</label>
+                            <input type="number" id="msgPage" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Limit:</label>
+                            <input type="number" id="msgLimit" value="50">
+                        </div>
+                        <button class="btn" onclick="getMessages()">ดึงข้อความ</button>
+                        <div class="result" id="getMsgResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getMsgResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge put">PUT</span> อ่านข้อความ</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="readRoomId" placeholder="Room ID">
+                        </div>
+                        <button class="btn" onclick="markAsRead()">ทำเครื่องหมายอ่านแล้ว</button>
+                        <div class="result" id="readMsgResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="readMsgResultData"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Tab -->
+            <div class="tab-content" id="transactions">
+                <div class="grid">
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> สร้างธุรกรรมและอัพโหลดสลิป</h3>
+                        <div class="form-group">
+                            <label>Chat Room ID:</label>
+                            <input type="text" id="txnRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Product Name:</label>
+                            <input type="text" id="txnProductName" placeholder="ชื่อสินค้า">
+                        </div>
+                        <div class="form-group">
+                            <label>Product Description:</label>
+                            <textarea id="txnProductDesc" placeholder="รายละเอียดสินค้า"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity:</label>
+                            <input type="number" id="txnQuantity" value="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (฿):</label>
+                            <input type="number" id="txnAmount" placeholder="1000">
+                        </div>
+                        <div class="form-group">
+                            <label>Payment Slip:</label>
+                            <input type="file" id="paymentSlip" accept="image/*">
+                        </div>
+                        <div class="form-group">
+                            <label>Bank Name:</label>
+                            <input type="text" id="txnBankName" placeholder="ธนาคารกรุงเทพ">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes (Optional):</label>
+                            <textarea id="txnNotes" placeholder="หมายเหตุเพิ่มเติม"></textarea>
+                        </div>
+                        <button class="btn" onclick="createTransaction()">สร้างธุรกรรม</button>
+                        <div class="result" id="createTxnResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="createTxnResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงข้อมูลธุรกรรม</h3>
+                        <div class="form-group">
+                            <label>Transaction ID:</label>
+                            <input type="text" id="getTxnId" placeholder="Transaction ID">
+                        </div>
+                        <button class="btn" onclick="getTransaction()">ดึงข้อมูล</button>
+                        <div class="result" id="getTxnResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getTxnResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge put">PUT</span> อัพเดทสถานะธุรกรรม</h3>
+                        <div class="form-group">
+                            <label>Transaction ID:</label>
+                            <input type="text" id="updateTxnId" placeholder="Transaction ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Status:</label>
+                            <select id="txnStatus">
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason:</label>
+                            <textarea id="txnReason" placeholder="เหตุผลในการเปลี่ยนสถานะ"></textarea>
+                        </div>
+                        <button class="btn" onclick="updateTransactionStatus()">อัพเดทสถานะ</button>
+                        <div class="result" id="updateTxnResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="updateTxnResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงธุรกรรมในห้องแชท</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="getRoomTxnId" placeholder="Room ID">
+                        </div>
+                        <button class="btn" onclick="getRoomTransactions()">ดึงข้อมูล</button>
+                        <div class="result" id="getRoomTxnResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getRoomTxnResultData"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let apiUrl = localStorage.getItem('apiUrl') || 'http://localhost:5000';
+        let token = localStorage.getItem('token') || '';
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+        // Initialize
+        document.getElementById('apiUrl').value = apiUrl;
+        updateAuthStatus();
+
+        function saveConfig() {
+            apiUrl = document.getElementById('apiUrl').value;
+            localStorage.setItem('apiUrl', apiUrl);
+            alert('บันทึกการตั้งค่าแล้ว');
+        }
+
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            const statusText = document.getElementById('statusText');
+            const userInfo = document.getElementById('userInfo');
+
+            if (token && currentUser) {
+                authStatus.classList.add('active', 'logged-in');
+                statusText.textContent = 'เข้าสู่ระบบแล้ว';
+                userInfo.textContent = ` | User: ${currentUser.username} (${currentUser.email})`;
+            } else {
+                authStatus.classList.add('active');
+                authStatus.classList.remove('logged-in');
+                statusText.textContent = 'ยังไม่ได้เข้าสู่ระบบ';
+                userInfo.textContent = '';
+            }
+        }
+
+        function logout() {
+            token = '';
+            currentUser = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('currentUser');
+            updateAuthStatus();
+            alert('ออกจากระบบแล้ว');
+        }
+
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function showResult(elementId, data) {
+            const resultElement = document.getElementById(elementId);
+            const resultDataElement = document.getElementById(elementId + 'Data');
+            resultElement.style.display = 'block';
+            resultDataElement.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null, isFormData = false) {
+            try {
+                const options = {
+                    method,
+                    headers: {}
+                };
+
+                if (token) {
+                    options.headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                if (body && !isFormData) {
+                    options.headers['Content-Type'] = 'application/json';
+                    options.body = JSON.stringify(body);
+                } else if (body && isFormData) {
+                    options.body = body;
+                }
+
+                const response = await fetch(`${apiUrl}${endpoint}`, options);
+                const data = await response.json();
+
+                return data;
+            } catch (error) {
+                return { success: false, message: error.message };
+            }
+        }
+
+        // Authentication Functions
+        async function register() {
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const fullName = document.getElementById('regFullName').value;
+            const phoneNumber = document.getElementById('regPhoneNumber').value;
+
+            const result = await apiCall('/api/auth/register', 'POST', {
+                username, email, password, fullName, phoneNumber
+            });
+
+            showResult('regResult', result);
+
+            if (result.success && result.data) {
+                token = result.data.token;
+                currentUser = result.data.user;
+                localStorage.setItem('token', token);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateAuthStatus();
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const result = await apiCall('/api/auth/login', 'POST', { email, password });
+
+            showResult('loginResult', result);
+
+            if (result.success && result.data) {
+                token = result.data.token;
+                currentUser = result.data.user;
+                localStorage.setItem('token', token);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateAuthStatus();
+            }
+        }
+
+        // Profile Functions
+        async function getProfile() {
+            const result = await apiCall('/api/auth/me', 'GET');
+            showResult('profileResult', result);
+        }
+
+        async function updateProfile() {
+            const fullName = document.getElementById('updateFullName').value;
+            const phoneNumber = document.getElementById('updatePhoneNumber').value;
+            const profileImage = document.getElementById('updateProfileImage').value;
+
+            const result = await apiCall('/api/auth/update-profile', 'PUT', {
+                fullName, phoneNumber, profileImage
+            });
+
+            showResult('updateProfileResult', result);
+
+            if (result.success && result.data) {
+                currentUser = result.data.user;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                updateAuthStatus();
+            }
+        }
+
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+
+            const result = await apiCall('/api/auth/change-password', 'PUT', {
+                currentPassword, newPassword
+            });
+
+            showResult('changePasswordResult', result);
+        }
+
+        // Chat Room Functions
+        async function createChatRoom() {
+            const otherUserId = document.getElementById('otherUserId').value;
+            const role = document.getElementById('role').value;
+            const productName = document.getElementById('productName').value;
+
+            const body = { otherUserId, role };
+            if (productName) {
+                body.productInfo = { name: productName };
+            }
+
+            const result = await apiCall('/api/chat/rooms', 'POST', body);
+            showResult('createRoomResult', result);
+        }
+
+        async function getChatRooms() {
+            const result = await apiCall('/api/chat/rooms', 'GET');
+            showResult('roomsResult', result);
+        }
+
+        async function getChatRoom() {
+            const roomId = document.getElementById('getRoomId').value;
+            const result = await apiCall(`/api/chat/rooms/${roomId}`, 'GET');
+            showResult('getRoomResult', result);
+        }
+
+        // Message Functions
+        async function sendMessage() {
+            const roomId = document.getElementById('msgRoomId').value;
+            const message = document.getElementById('message').value;
+            const messageType = document.getElementById('messageType').value;
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/messages`, 'POST', {
+                message, messageType
+            });
+
+            showResult('sendMsgResult', result);
+        }
+
+        async function sendImage() {
+            const roomId = document.getElementById('imgRoomId').value;
+            const message = document.getElementById('imgMessage').value;
+            const fileInput = document.getElementById('chatImage');
+
+            if (!fileInput.files[0]) {
+                alert('กรุณาเลือกไฟล์รูปภาพ');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('chatImage', fileInput.files[0]);
+            if (message) formData.append('message', message);
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/messages/upload`, 'POST', formData, true);
+            showResult('sendImgResult', result);
+        }
+
+        async function getMessages() {
+            const roomId = document.getElementById('getMsgRoomId').value;
+            const page = document.getElementById('msgPage').value;
+            const limit = document.getElementById('msgLimit').value;
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/messages?page=${page}&limit=${limit}`, 'GET');
+            showResult('getMsgResult', result);
+        }
+
+        async function markAsRead() {
+            const roomId = document.getElementById('readRoomId').value;
+            const result = await apiCall(`/api/chat/rooms/${roomId}/read`, 'PUT');
+            showResult('readMsgResult', result);
+        }
+
+        // Transaction Functions
+        async function createTransaction() {
+            const chatRoomId = document.getElementById('txnRoomId').value;
+            const productName = document.getElementById('txnProductName').value;
+            const productDescription = document.getElementById('txnProductDesc').value;
+            const quantity = document.getElementById('txnQuantity').value;
+            const amount = document.getElementById('txnAmount').value;
+            const bankName = document.getElementById('txnBankName').value;
+            const notes = document.getElementById('txnNotes').value;
+            const fileInput = document.getElementById('paymentSlip');
+
+            if (!fileInput.files[0]) {
+                alert('กรุณาเลือกไฟล์สลิป');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('slip', fileInput.files[0]);
+            formData.append('chatRoomId', chatRoomId);
+            formData.append('productName', productName);
+            formData.append('productDescription', productDescription);
+            formData.append('quantity', quantity);
+            formData.append('amount', amount);
+            formData.append('bankName', bankName);
+            if (notes) formData.append('notes', notes);
+
+            const result = await apiCall('/api/chat/transactions', 'POST', formData, true);
+            showResult('createTxnResult', result);
+        }
+
+        async function getTransaction() {
+            const transactionId = document.getElementById('getTxnId').value;
+            const result = await apiCall(`/api/chat/transactions/${transactionId}`, 'GET');
+            showResult('getTxnResult', result);
+        }
+
+        async function updateTransactionStatus() {
+            const transactionId = document.getElementById('updateTxnId').value;
+            const status = document.getElementById('txnStatus').value;
+            const reason = document.getElementById('txnReason').value;
+
+            const result = await apiCall(`/api/chat/transactions/${transactionId}/status`, 'PUT', {
+                status, reason
+            });
+
+            showResult('updateTxnResult', result);
+        }
+
+        async function getRoomTransactions() {
+            const roomId = document.getElementById('getRoomTxnId').value;
+            const result = await apiCall(`/api/chat/rooms/${roomId}/transactions`, 'GET');
+            showResult('getRoomTxnResult', result);
+        }
+    </script>
+</body>
+</html>

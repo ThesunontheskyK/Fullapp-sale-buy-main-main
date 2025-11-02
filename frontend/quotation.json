@@ -1,0 +1,26 @@
+[
+  {
+    "quotation_id": "Q20250823-001",
+    "order_id": "ORD20250823-123",
+    "seller": {
+      "id": "205",
+      "name": "นายสมชาย ขายดี"
+    },
+    "buyer": {
+      "id": "301",
+      "name": "นางสาวสายฝน ซื้อดี"
+    },
+    "product": {
+      "name": "iPhone 15 Pro Max 256GB",
+      "details": "สีเงิน, เครื่องศูนย์ไทย, ประกัน 1 ปี",
+      "images": [
+        "https://example.com/images/iphone15-front.jpg",
+        "https://example.com/images/iphone15-back.jpg"
+      ],
+      "price": 48900
+    },
+    "notes": "พร้อมส่งวันนี้, จัดส่ง Kerry ภายใน 24 ชั่วโมง",
+    "timestamp": 1692787200,
+    "status": false
+  }
+]

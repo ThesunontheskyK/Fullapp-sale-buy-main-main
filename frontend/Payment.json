@@ -1,0 +1,19 @@
+{
+  "rooms": [
+    {
+      "RoomID": "42565412",
+      "Payment": {
+        "sender_id": "205",
+        "type": "quotation",
+        "quotation": {
+          "productName": "iPhone 15 Pro",
+          "details": "สีดำ 256GB ใหม่มือ 1 ประกัน Apple Care+",
+          "images": "https://example.com/iphone.jpg",
+          "price": "45000",
+          "status": false
+        },
+        "timestamp": 1693920120
+      }
+    }
+  ]
+}
