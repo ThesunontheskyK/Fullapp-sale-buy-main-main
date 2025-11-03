@@ -19,6 +19,7 @@ export default function Register({ navigation }) {
   const [checked, setChecked] = useState(false);
 
   const handleCreate = () => {
+    
     if (!email?.trim() || !password?.trim()) return;
 
     if (!check_email || !check_password || !check_confirmPassword || !checked) return;

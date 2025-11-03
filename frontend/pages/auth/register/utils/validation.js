@@ -14,6 +14,7 @@ export const validateEmail = (email) => {
 };
 
 export const validatePassword = (password) => {
+  
   if (!password.trim()) return false;
   // รองรับตัวอักษรพิเศษ เช่น @#$%^&* ฯลฯ
   const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
