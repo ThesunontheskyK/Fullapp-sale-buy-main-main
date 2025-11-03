@@ -439,6 +439,10 @@
                             <input type="text" id="otherUserId" placeholder="User ID">
                         </div>
                         <div class="form-group">
+                            <label>Other User Name:</label>
+                            <input type="text" id="otherUserName" placeholder="ชื่อผู้ใช้อีกฝ่าย">
+                        </div>
+                        <div class="form-group">
                             <label>Role:</label>
                             <select id="role">
                                 <option value="buyer">Buyer</option>
@@ -497,13 +501,42 @@
                             <label>Message Type:</label>
                             <select id="messageType">
                                 <option value="text">Text</option>
-                                <option value="image">Image</option>
+                                <option value="system">System</option>
                             </select>
                         </div>
                         <button class="btn" onclick="sendMessage()">ส่งข้อความ</button>
                         <div class="result" id="sendMsgResult" style="display: none;">
                             <h4>ผลลัพธ์:</h4>
                             <pre id="sendMsgResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> ส่งใบเสนอราคา</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="quotRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Product Name:</label>
+                            <input type="text" id="quotProductName" placeholder="ชื่อสินค้า">
+                        </div>
+                        <div class="form-group">
+                            <label>Details:</label>
+                            <textarea id="quotDetails" placeholder="รายละเอียดสินค้า"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Images (CSV URLs):</label>
+                            <input type="text" id="quotImages" placeholder="url1,url2,url3">
+                        </div>
+                        <div class="form-group">
+                            <label>Price:</label>
+                            <input type="text" id="quotPrice" placeholder="150">
+                        </div>
+                        <button class="btn" onclick="sendQuotation()">ส่งใบเสนอราคา</button>
+                        <div class="result" id="sendQuotResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="sendQuotResultData"></pre>
                         </div>
                     </div>
 
@@ -550,15 +583,56 @@
                     </div>
 
                     <div class="section">
-                        <h3><span class="badge put">PUT</span> อ่านข้อความ</h3>
+                        <h3><span class="badge put">PUT</span> อัพเดทเลขพัสดุ</h3>
                         <div class="form-group">
                             <label>Room ID:</label>
-                            <input type="text" id="readRoomId" placeholder="Room ID">
+                            <input type="text" id="trackRoomId" placeholder="Room ID">
                         </div>
-                        <button class="btn" onclick="markAsRead()">ทำเครื่องหมายอ่านแล้ว</button>
-                        <div class="result" id="readMsgResult" style="display: none;">
+                        <div class="form-group">
+                            <label>Tracking Number:</label>
+                            <input type="text" id="trackingNumber" placeholder="TH1234567890">
+                        </div>
+                        <button class="btn" onclick="updateTracking()">อัพเดทเลขพัสดุ</button>
+                        <div class="result" id="trackResult" style="display: none;">
                             <h4>ผลลัพธ์:</h4>
-                            <pre id="readMsgResultData"></pre>
+                            <pre id="trackResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge put">PUT</span> ยืนยันการได้รับของ</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="completeRoomId" placeholder="Room ID">
+                        </div>
+                        <button class="btn btn-success" onclick="completeRoom()">ยืนยันการได้รับของ</button>
+                        <div class="result" id="completeResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="completeResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge put">PUT</span> ตอบรับใบเสนอราคา</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="quotStatusRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Message ID:</label>
+                            <input type="text" id="quotStatusMsgId" placeholder="Message ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Status:</label>
+                            <select id="quotStatus">
+                                <option value="true">Accept (ยอมรับ)</option>
+                                <option value="false">Reject (ปฏิเสธ)</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="updateQuotationStatus()">อัพเดทสถานะ</button>
+                        <div class="result" id="quotStatusResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="quotStatusResultData"></pre>
                         </div>
                     </div>
                 </div>
@@ -828,10 +902,11 @@
         // Chat Room Functions
         async function createChatRoom() {
             const otherUserId = document.getElementById('otherUserId').value;
+            const otherUserName = document.getElementById('otherUserName').value;
             const role = document.getElementById('role').value;
             const productName = document.getElementById('productName').value;
 
-            const body = { otherUserId, role };
+            const body = { otherUserId, otherUserName, role };
             if (productName) {
                 body.productInfo = { name: productName };
             }
@@ -854,19 +929,40 @@
         // Message Functions
         async function sendMessage() {
             const roomId = document.getElementById('msgRoomId').value;
-            const message = document.getElementById('message').value;
-            const messageType = document.getElementById('messageType').value;
+            const text = document.getElementById('message').value;
+            const type = document.getElementById('messageType').value;
 
             const result = await apiCall(`/api/chat/rooms/${roomId}/messages`, 'POST', {
-                message, messageType
+                text, type
             });
 
             showResult('sendMsgResult', result);
         }
 
+        async function sendQuotation() {
+            const roomId = document.getElementById('quotRoomId').value;
+            const productName = document.getElementById('quotProductName').value;
+            const details = document.getElementById('quotDetails').value;
+            const images = document.getElementById('quotImages').value;
+            const price = document.getElementById('quotPrice').value;
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/messages`, 'POST', {
+                type: 'quotation',
+                quotation: {
+                    productName,
+                    details,
+                    images,
+                    price,
+                    status: false
+                }
+            });
+
+            showResult('sendQuotResult', result);
+        }
+
         async function sendImage() {
             const roomId = document.getElementById('imgRoomId').value;
-            const message = document.getElementById('imgMessage').value;
+            const text = document.getElementById('imgMessage').value;
             const fileInput = document.getElementById('chatImage');
 
             if (!fileInput.files[0]) {
@@ -876,7 +972,7 @@
 
             const formData = new FormData();
             formData.append('chatImage', fileInput.files[0]);
-            if (message) formData.append('message', message);
+            if (text) formData.append('text', text);
 
             const result = await apiCall(`/api/chat/rooms/${roomId}/messages/upload`, 'POST', formData, true);
             showResult('sendImgResult', result);
@@ -891,10 +987,35 @@
             showResult('getMsgResult', result);
         }
 
-        async function markAsRead() {
-            const roomId = document.getElementById('readRoomId').value;
-            const result = await apiCall(`/api/chat/rooms/${roomId}/read`, 'PUT');
-            showResult('readMsgResult', result);
+        async function updateTracking() {
+            const roomId = document.getElementById('trackRoomId').value;
+            const trackingNumber = document.getElementById('trackingNumber').value;
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/tracking`, 'PUT', {
+                trackingNumber
+            });
+
+            showResult('trackResult', result);
+        }
+
+        async function completeRoom() {
+            const roomId = document.getElementById('completeRoomId').value;
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/complete`, 'PUT');
+
+            showResult('completeResult', result);
+        }
+
+        async function updateQuotationStatus() {
+            const roomId = document.getElementById('quotStatusRoomId').value;
+            const messageId = document.getElementById('quotStatusMsgId').value;
+            const status = document.getElementById('quotStatus').value === 'true';
+
+            const result = await apiCall(`/api/chat/rooms/${roomId}/quotation/${messageId}`, 'PUT', {
+                status
+            });
+
+            showResult('quotStatusResult', result);
         }
 
         // Transaction Functions

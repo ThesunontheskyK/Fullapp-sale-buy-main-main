@@ -50,6 +50,10 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  Creadit:{
+    type: Number,
+    default: 0
   }
 }, {
   timestamps: true
