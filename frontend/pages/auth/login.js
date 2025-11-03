@@ -10,6 +10,7 @@ export default function Login({ navigation }) {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
+    
     if (!email?.trim() || !password?.trim()) {
       setError("กรุณากรอก email และ password");
       return;
