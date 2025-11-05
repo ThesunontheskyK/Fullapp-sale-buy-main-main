@@ -14,13 +14,15 @@ import PaymentPage from "./pages/paymentpage/PaymentPage";
 import MessengerPage from "./pages/messenger";
 import confirmEmail from "./pages/auth/register/confirmemail";
 import Terms from "./pages/auth/Terms";
+import ProfilePage from "./pages/profilePage/profilePage";
+import ChangeData from "./pages/profilePage/changedata";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
 
   const [initialRoute, setInitialRoute] = useState(null);
-  const [userId, setUserId] = useState("205");
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
 
@@ -29,6 +31,8 @@ export default function App() {
         
         const token = await getItem('token');
         const storedUserId = await getItem('user_id');
+
+        setUserId(storedUserId);
 
         if (!token || String(token || '').trim() === "" || !storedUserId) {
           setInitialRoute('Login');
@@ -67,6 +71,9 @@ export default function App() {
         <Stack.Screen name="Home" component={HomePage} initialParams={{ userId: userId }} />
         <Stack.Screen name="Room" component={RoomPage} initialParams={{ userId: userId }} />
         <Stack.Screen name="Messager" component={MessengerPage} initialParams={{ userId: userId }} />
+        <Stack.Screen name="ProfilePage" component={ProfilePage} initialParams={{ userId: userId }} />
+
+        <Stack.Screen name="ChangeData" component={ChangeData} initialParams={{ userId: userId }} options={{animation: "slide_from_right"}} />
         <Stack.Screen name="ConfirmEmail" component={confirmEmail} options={{animation: "slide_from_right"}}/>
         <Stack.Screen name="PaymentPage" component={PaymentPage} options={{ animation: "slide_from_right" }} />
       </Stack.Navigator>

@@ -38,9 +38,9 @@ export default function Nav() {
       </Pressable>
 
       {/* ตั้งค่า */}
-      <Pressable onPress={() => handlePress("Setting")} className="w-14 h-20 flex items-center justify-center">
-        <AntDesign name="setting" size={22} color={route.name === "Setting" ? "#125c91" : "#6B6B6B"}/>
-        <Text className={`text-center text-sm font-semibold ${ route.name === "Setting" ? "text-sky-600" : "text-black/60" }`} >
+      <Pressable onPress={() => handlePress("ProfilePage")} className="w-14 h-20 flex items-center justify-center">
+        <AntDesign name="setting" size={22} color={route.name === "ProfilePage" ? "#125c91" : "#6B6B6B"}/>
+        <Text className={`text-center text-sm font-semibold ${ route.name === "ProfilePage" ? "text-sky-600" : "text-black/60" }`} >
           ตั้งค่า
         </Text>
       </Pressable>

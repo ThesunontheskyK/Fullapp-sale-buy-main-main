@@ -14,6 +14,7 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @desc    ลงทะเบียนผู้ใช้ใหม่
 // @access  Public
+
 router.post('/register', async (req, res, next) => {
   try {
     const { username, email, password, fullName, phoneNumber } = req.body;
@@ -157,6 +158,7 @@ router.get('/me', protect, async (req, res, next) => {
     next(error);
   }
 });
+
 
 // @route   PUT /api/auth/update-profile
 // @desc    อัพเดทข้อมูลส่วนตัว
