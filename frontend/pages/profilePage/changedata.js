@@ -18,7 +18,7 @@ export default function ChangeData({ route, navigation }) {
 
   useEffect(() => {
 
-    if(fullname.trim() !== "" && phone.trim() !== "") {
+    if(fullname.trim() !== "" && phone.trim() !== "" && phone.trim().length === 10 ) {
         setSavefull(true);
     }else {
         setSavefull(false);
@@ -73,7 +73,7 @@ export default function ChangeData({ route, navigation }) {
   const handleSave = async () => {
 
     if(!Savefull) return;
-    
+
     try {
         
         const response = await api.put('/auth/update-profile', {
