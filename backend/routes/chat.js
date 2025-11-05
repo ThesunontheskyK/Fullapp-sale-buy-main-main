@@ -17,17 +17,17 @@ function generateMessageID() {
 }
 
 // @route   POST /api/chat/rooms
-// @desc    สร้างห้องแชทใหม่ (ตามโครงสร้าง frontend)
+// @desc    สร้างห้องแชทใหม่ (ผู้สร้างเพียงคนเดียว คนอื่นเข้าทีหลัง)
 // @access  Private
 router.post('/rooms', protect, async (req, res, next) => {
   try {
-    const { otherUserId, otherUserName, role, productInfo } = req.body;
+    const { role, roomName } = req.body;
 
     // ตรวจสอบข้อมูล
-    if (!otherUserId || !role || !otherUserName) {
+    if (!role) {
       return res.status(400).json({
         success: false,
-        message: 'กรุณาระบุข้อมูลให้ครบถ้วน'
+        message: 'กรุณาเลือกบทบาท (role)'
       });
     }
 
@@ -38,7 +38,7 @@ router.post('/rooms', protect, async (req, res, next) => {
       });
     }
 
-    // สร้าง RoomID ใหม่
+    // สร้าง RoomID ใหม่ (รหัสห้อง 8 หลัก)
     let roomID = generateRoomID();
 
     // ตรวจสอบว่า RoomID ซ้ำหรือไม่
@@ -46,15 +46,11 @@ router.post('/rooms', protect, async (req, res, next) => {
       roomID = generateRoomID();
     }
 
-    // สร้าง users object
+    // สร้าง users object (เฉพาะผู้สร้างก่อน)
     const users = new Map();
     users.set(req.user.id, {
       name: req.user.fullName || req.user.username,
       role: role
-    });
-    users.set(otherUserId, {
-      name: otherUserName,
-      role: role === 'buyer' ? 'seller' : 'buyer'
     });
 
     // สร้างห้องแชทใหม่
@@ -62,7 +58,8 @@ router.post('/rooms', protect, async (req, res, next) => {
       RoomID: roomID,
       users: users,
       messages: new Map(),
-      status: 'active'
+      status: 'active',
+      roomName: roomName || 'ห้องแชท'
     });
 
     res.status(201).json({
@@ -73,8 +70,96 @@ router.post('/rooms', protect, async (req, res, next) => {
           RoomID: chatRoom.RoomID,
           users: Object.fromEntries(chatRoom.users),
           messages: Object.fromEntries(chatRoom.messages),
-          status: chatRoom.status
+          status: chatRoom.status,
+          roomName: chatRoom.roomName
         }
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @route   POST /api/chat/rooms/:roomCode/join
+// @desc    เข้าร่วมห้องแชทด้วยรหัสห้อง (ระบบกำหนด role ให้อัตโนมัติ)
+// @access  Private
+router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
+  try {
+    const { roomCode } = req.params;
+
+    // ค้นหาห้องแชทด้วย RoomID
+    const chatRoom = await ChatRoom.findOne({ RoomID: roomCode });
+
+    if (!chatRoom) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบห้องแชทที่ใช้รหัสนี้'
+      });
+    }
+
+    // ตรวจสอบว่าผู้ใช้เข้าห้องนี้แล้วหรือยัง
+    if (chatRoom.users && chatRoom.users.has(req.user.id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'คุณเป็นสมาชิกห้องนี้อยู่แล้ว'
+      });
+    }
+
+    // หา role ที่เหลืออยู่
+    const existingRoles = Array.from(chatRoom.users.values()).map(user => user.role);
+    let assignedRole;
+
+    if (!existingRoles.includes('buyer')) {
+      assignedRole = 'buyer';
+    } else if (!existingRoles.includes('seller')) {
+      assignedRole = 'seller';
+    } else {
+      // ถ้าครบทั้ง 2 role แล้ว ให้เป็น buyer (หรืออาจจะ reject)
+      return res.status(400).json({
+        success: false,
+        message: 'ห้องนี้มีสมาชิกครบแล้ว (มีทั้ง buyer และ seller)'
+      });
+    }
+
+    // เพิ่มผู้ใช้เข้าห้อง
+    if (!chatRoom.users) {
+      chatRoom.users = new Map();
+    }
+
+    chatRoom.users.set(req.user.id, {
+      name: req.user.fullName || req.user.username,
+      role: assignedRole
+    });
+
+    await chatRoom.save();
+
+    // สร้างข้อความระบบแจ้งเตือน
+    const messageId = generateMessageID();
+    const systemMessage = {
+      id: messageId,
+      type: 'system',
+      text: `${req.user.fullName || req.user.username} เข้าร่วมห้องแชทในฐานะ ${assignedRole === 'buyer' ? 'ผู้ซื้อ' : 'ผู้ขาย'}`,
+      timestamp: Math.floor(Date.now() / 1000)
+    };
+
+    if (!chatRoom.messages) {
+      chatRoom.messages = new Map();
+    }
+    chatRoom.messages.set(messageId, systemMessage);
+    await chatRoom.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'เข้าร่วมห้องแชทสำเร็จ',
+      data: {
+        chatRoom: {
+          RoomID: chatRoom.RoomID,
+          users: Object.fromEntries(chatRoom.users),
+          messages: Object.fromEntries(chatRoom.messages),
+          status: chatRoom.status,
+          roomName: chatRoom.roomName
+        },
+        assignedRole: assignedRole // ส่ง role ที่ระบบกำหนดให้กลับไป
       }
     });
   } catch (error) {

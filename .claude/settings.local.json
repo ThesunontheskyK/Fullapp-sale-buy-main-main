@@ -9,7 +9,10 @@
       "Bash(npm install:*)",
       "Bash(dir:*)",
       "Bash(printf:*)",
-      "Bash(\"/tmp/chat_analysis.md\")"
+      "Bash(\"/tmp/chat_analysis.md\")",
+      "Bash(npx expo install:*)",
+      "Bash(npm start:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
