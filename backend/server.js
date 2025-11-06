@@ -39,17 +39,23 @@ app.get('/', (req, res) => {
         changePassword: 'PUT /api/auth/change-password (Protected)'
       },
       chat: {
-        createRoom: 'POST /api/chat/rooms (Protected)',
-        getRooms: 'GET /api/chat/rooms (Protected)',
-        getRoom: 'GET /api/chat/rooms/:roomId (Protected)',
-        sendMessage: 'POST /api/chat/rooms/:roomId/messages (Protected)',
-        sendImage: 'POST /api/chat/rooms/:roomId/messages/upload (Protected)',
-        getMessages: 'GET /api/chat/rooms/:roomId/messages (Protected)',
-        markAsRead: 'PUT /api/chat/rooms/:roomId/read (Protected)',
-        createTransaction: 'POST /api/chat/transactions (Protected)',
-        getTransaction: 'GET /api/chat/transactions/:transactionId (Protected)',
-        updateTransactionStatus: 'PUT /api/chat/transactions/:transactionId/status (Protected)',
-        getRoomTransactions: 'GET /api/chat/rooms/:roomId/transactions (Protected)'
+        createRoom: 'POST /api/chat/rooms (Protected) - สร้างห้องแชทใหม่',
+        joinRoom: 'POST /api/chat/rooms/:roomCode/join (Protected) - เข้าร่วมห้องด้วยรหัส',
+        getRooms: 'GET /api/chat/rooms (Protected) - ดูรายการห้องทั้งหมด',
+        getRoom: 'GET /api/chat/rooms/:roomId (Protected) - ดูข้อมูลห้อง',
+        sendMessage: 'POST /api/chat/rooms/:roomId/messages (Protected) - ส่งข้อความ',
+        sendImage: 'POST /api/chat/rooms/:roomId/messages/upload (Protected) - ส่งรูปภาพ',
+        getMessages: 'GET /api/chat/rooms/:roomId/messages (Protected) - ดึงข้อความทั้งหมด',
+        updateTracking: 'PUT /api/chat/rooms/:roomId/tracking (Protected) - อัพเดทเลขพัสดุ',
+        completeRoom: 'PUT /api/chat/rooms/:roomId/complete (Protected) - ยืนยันการได้รับของ',
+        updateQuotation: 'PUT /api/chat/rooms/:roomId/quotation/:messageId (Protected) - อัพเดทใบเสนอราคา'
+      },
+      socketIO: {
+        events: 'Socket.io real-time events available',
+        joinRoom: 'join-room - เข้าร่วมห้องแชท',
+        sendMessage: 'send-message - ส่งข้อความแบบ real-time',
+        receiveMessage: 'receive-message - รับข้อความแบบ real-time',
+        leaveRoom: 'leave-room - ออกจากห้องแชท'
       }
     }
   });
@@ -68,6 +74,46 @@ const server = app.listen(PORT, () => {
 ║   Environment: ${process.env.NODE_ENV}           ║
 ╚════════════════════════════════════════╝
   `);
+});
+
+// ตั้งค่า Socket.io
+const io = require('socket.io')(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Socket.io connection handler
+io.on('connection', (socket) => {
+  console.log('New client connected:', socket.id);
+
+  // เข้าร่วมห้องแชท
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+    socket.to(roomId).emit('user-joined', { socketId: socket.id });
+  });
+
+  // ส่งข้อความ
+  socket.on('send-message', (data) => {
+    const { roomId, message } = data;
+    console.log(`Message sent to room ${roomId}:`, message);
+    // ส่งข้อความไปยังทุกคนในห้อง (รวมตัวเอง)
+    io.to(roomId).emit('receive-message', message);
+  });
+
+  // ออกจากห้องแชท
+  socket.on('leave-room', (roomId) => {
+    socket.leave(roomId);
+    console.log(`Socket ${socket.id} left room ${roomId}`);
+    socket.to(roomId).emit('user-left', { socketId: socket.id });
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
 });
 
 // Handle unhandled promise rejections

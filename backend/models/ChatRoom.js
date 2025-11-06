@@ -9,6 +9,12 @@ const chatRoomSchema = new mongoose.Schema({
     unique: true
   },
 
+  // roomName - ชื่อห้องแชท/ชื่อธุรกรรม
+  roomName: {
+    type: String,
+    default: 'ห้องแชท'
+  },
+
   // users - เก็บข้อมูล user ทั้งหมดในห้อง เป็น object/map
   // รูปแบบ: { "userId": { name: String, role: String } }
   users: {

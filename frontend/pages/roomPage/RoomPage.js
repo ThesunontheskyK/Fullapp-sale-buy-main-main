@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Text,
   View,
@@ -6,11 +6,13 @@ import {
   Platform,
   StatusBar,
   TouchableOpacity,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { Clipboard } from "react-native";
-import ChatData from "../../chat.json";
+import * as Clipboard from 'expo-clipboard';
+import api from "../../config/api";
+import socketService from "../../services/socket";
 import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import QuotationModal from "./QuotationModal";
@@ -18,26 +20,14 @@ import TrackingModal from "./TrackingModal";
 import DeliveryActions from "./DeliveryActions";
 
 export default function RoomPage({ navigation, route }) {
-    
-  const { userId, Idroom, room_number } = route.params || {};
 
-  const currentUserId = userId;
+  const { userId, Idroom, room_number, role } = route.params || {};
+
   const roomId = Idroom ? Idroom.toString() : room_number ? room_number.toString() : "";
-
-  const room = ChatData.rooms.find((r) => r.RoomID === roomId);
-  
-  if (!room) return <Text>Room not found</Text>;
-
-  const RoomIdname = room.RoomID;
-  const currentUser = room.users[currentUserId];
-  const currentUserRole = currentUser?.role || "buyer";
-
-  const initialMessages = Object.entries(room.messages).map(([id, msg]) => ({
-    id,
-    ...msg,
-  }));
-
-  const [messages, setMessages] = useState(initialMessages);
+  const [room, setRoom] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const flatListRef = useRef(null);
 
@@ -52,24 +42,104 @@ export default function RoomPage({ navigation, route }) {
   const [trackingModalVisible, setTrackingModalVisible] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
 
-  const handleTextChange = useCallback((text) => setInputText(text), []);
+  // โหลดข้อมูลห้องจาก API
+  useEffect(() => {
+    const fetchRoomData = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/chat/rooms/${roomId}`);
 
-  const sendMessage = () => {
-    if (inputText.trim() === "") return;
+        if (response.data.success) {
+          const roomData = response.data.data.chatRoom;
+          setRoom(roomData);
 
-    const newMsg = {
-      id: Date.now().toString(),
-      sender_id: currentUserId,
-      text: inputText,
-      timestamp: Math.floor(Date.now() / 1000),
+          // แปลง messages object เป็น array
+          const messagesArray = Object.entries(roomData.messages || {}).map(([id, msg]) => ({
+            id,
+            ...msg,
+          }));
+          setMessages(messagesArray);
+
+          // หา userId ปัจจุบันจาก users object
+          const userEntries = Object.entries(roomData.users);
+          if (userEntries.length > 0) {
+            // ใช้ userId จาก params ถ้ามี ไม่งั้นใช้ตัวแรกใน users
+            const foundUserId = userId || userEntries[0][0];
+            setCurrentUserId(foundUserId);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching room:', error);
+        alert('ไม่สามารถโหลดข้อมูลห้องได้');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setMessages([...messages, newMsg]);
-    setInputText("");
-    
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 50);
+    if (roomId) {
+      fetchRoomData();
+    }
+  }, [roomId]);
+
+  // เชื่อมต่อ Socket.io
+  useEffect(() => {
+    socketService.connect();
+
+    if (roomId) {
+      socketService.joinRoom(roomId);
+
+      // รับข้อความใหม่
+      socketService.onReceiveMessage((message) => {
+        console.log('Received message:', message);
+        setMessages((prevMessages) => {
+          // ตรวจสอบว่ามีข้อความนี้อยู่แล้วหรือไม่
+          const exists = prevMessages.some((msg) => msg.id === message.id);
+          if (exists) {
+            return prevMessages;
+          }
+          return [...prevMessages, message];
+        });
+
+        // Auto scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+      });
+    }
+
+    return () => {
+      if (roomId) {
+        socketService.leaveRoom(roomId);
+      }
+      socketService.offReceiveMessage();
+    };
+  }, [roomId]);
+
+  const handleTextChange = useCallback((text) => setInputText(text), []);
+
+  const sendMessage = async () => {
+    if (inputText.trim() === "") return;
+
+    try {
+      const messageText = inputText;
+      setInputText(""); // Clear input immediately
+
+      // บันทึกข้อความลง database
+      const response = await api.post(`/chat/rooms/${roomId}/messages`, {
+        text: messageText,
+        type: 'text',
+      });
+
+      if (response.data.success) {
+        const newMsg = response.data.data.message;
+
+        // ส่งข้อความผ่าน Socket.io
+        socketService.sendMessage(roomId, newMsg);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('ไม่สามารถส่งข้อความได้');
+    }
   };
 
   const handleInputFocus = () => {
@@ -78,9 +148,32 @@ export default function RoomPage({ navigation, route }) {
     }, 300);
   };
 
-  const handleCopy = () => {
-    Clipboard.setString(RoomIdname);
+  const handleCopy = async () => {
+    await Clipboard.setStringAsync(roomId);
   };
+
+  // ถ้ายังโหลดข้อมูลอยู่
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="mt-4 text-gray-600">กำลังโหลดข้อมูลห้อง...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // ถ้าไม่พบห้อง
+  if (!room) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
+        <Text className="text-lg text-gray-600">ไม่พบห้องแชทนี้</Text>
+      </SafeAreaView>
+    );
+  }
+
+  const currentUser = room.users?.[currentUserId];
+  const currentUserRole = currentUser?.role || role || "buyer";
+  const RoomIdname = room.RoomID;
 
   const pendingQuotations = messages.filter(
     (msg) =>
