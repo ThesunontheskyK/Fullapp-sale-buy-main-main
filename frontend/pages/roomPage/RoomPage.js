@@ -189,15 +189,15 @@ export default function RoomPage({ navigation, route }) {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
+      <StatusBar barStyle="light-content" backgroundColor="#125c91" />
 
       {/* Header */}
-      <View className="bg-blue-500 shadow-sm">
+      <View className="bg-[#125c91] shadow-sm">
         <View className="flex-row items-center justify-between px-4 py-3">
           <View className="flex-row items-center justify-between w-full">
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              className="w-10 h-10 bg-blue-400 rounded-full items-center justify-center mr-3"
+              className="w-10 h-10  rounded-full items-center justify-center mr-3"
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
@@ -226,7 +226,7 @@ export default function RoomPage({ navigation, route }) {
           {pendingQuotations.map((msg) => (
             <View key={msg.id} className="flex-row px-9 mb-2 gap-2 justify-between items-center">
               <TouchableOpacity
-                className="w-full bg-green-500 py-3 rounded-lg items-center justify-center shadow"
+                className="w-full bg-[#125c91] py-3 rounded-lg items-center justify-center shadow"
                 onPress={() => handlePayQuotation(msg.id)}
               >
                 <Text className="text-white font-semibold text-center">ชำระเงิน</Text>

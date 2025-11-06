@@ -68,16 +68,7 @@ export default function Register({ navigation }) {
         
       }
     } catch (error) {
-      console.log("Register error:", error);
-
-      let errorMessage = "เกิดข้อผิดพลาดในการสร้างบัญชี";
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
+      console.log("Registration Error:", error.response?.data || error.message);
     }
   };
 

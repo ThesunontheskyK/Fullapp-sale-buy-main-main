@@ -6,9 +6,10 @@ const { width } = Dimensions.get('window');
 export default function PromotionSection() {
   
   const promotions = [
-    { id: "1", image: require("../../assets/promotion.png") },
+    { id: "1", image: require("../../assets/promotion-5.png") },
     { id: "2", image: require("../../assets/promotion-3.png") },
     { id: "3", image: require("../../assets/promotion-2.jpg") },
+    { id: "4", image: require("../../assets/promotion.png") },
   ];
 
   return (

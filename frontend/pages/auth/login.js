@@ -9,48 +9,43 @@ export default function Login({ navigation }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = async () => {
-    
-    if (!email?.trim() || !password?.trim()) {
-      setError("กรุณากรอก email และ password");
-      return;
+const handleLogin = async () => {
+  if (!email?.trim() || !password?.trim()) {
+    setError("กรุณากรอก email และ password");
+    return;
+  }
+
+  try {
+    const response = await api.post("/auth/login", {
+      email: email.trim(),
+      password: password,
+    });
+
+    if (response.status === 200 && response.data.success) {
+      const { token, user } = response.data.data;
+
+      await SecureStore.setItemAsync("token", token);
+      await SecureStore.setItemAsync("user_id", user.id);
+
+      setError("");
+      navigation.navigate("OTP", { email });
     }
 
-    try {
-      const response = await api.post('/auth/login', {
-        email: email.trim(),
-        password: password,
-      });
+  } catch (error) {
+    console.log("Login error:", error.response?.data || error.message);
 
-      if (response.status === 200 && response.data.success) {
-        const { token, user } = response.data.data;
-
-        // บันทึก token และ user_id
-        await SecureStore.setItemAsync("token", token);
-        await SecureStore.setItemAsync("user_id", user.id);
-
-        // ล้าง error
-        setError("");
-
-        // นำทางไปหน้า OTP
-        navigation.navigate("OTP", { email });
-      }
-    } catch (error) {
-      console.log("Login error:", error);
-
-      let errorMessage = "เข้าสู่ระบบไม่สำเร็จ";
-
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 401) {
-        errorMessage = "Email หรือ Password ไม่ถูกต้อง";
-      } else if (error.message) {
-        errorMessage = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
-      }
-
-      setError(errorMessage);
+    if (error.response?.status === 401) {
+      setError("Email หรือ Password ไม่ถูกต้อง");
+    } else if (error.response?.data?.message) {
+      setError(error.response.data.message);
+    } else if (error.message.includes("Network")) {
+      setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+    } else {
+      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     }
-  };
+  }
+};
+
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>

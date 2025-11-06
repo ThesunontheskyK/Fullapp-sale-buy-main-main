@@ -12,7 +12,7 @@ export default function SearchRoomSection({
 }) {
   return (
     <View className="w-full flex justify-center items-center px-4 py-8 pb-10">
-      <View className="w-full h-[50px] border border-black/50 rounded-full flex flex-row items-center px-1">
+      <View className="w-full h-[50px] border border-black/30 rounded-md flex flex-row items-center px-1">
         <View className="w-1/5 h-full flex justify-center items-center">
           <EvilIcons name="search" size={40} color="#125c91" />
         </View>
@@ -23,14 +23,17 @@ export default function SearchRoomSection({
               setIdroom(text);
               setNotFound(false);
             }}
-            placeholder="ใส่รหัสห้องธุรกรรม"
+            placeholder="ค้นหาห้อง"
             returnKeyType="search"
+            className="font-semibold text-gray-800 h-full"
+            placeholderTextColor="#9CA3AF"
             onSubmitEditing={handleInput}
+            keyboardType="decimal-pad"
           />
         </View>
         <Pressable
           onPress={handleInput}
-          className="w-1/5 h-[90%] bg-[#125c91] flex justify-center items-center rounded-full"
+          className="w-1/5 h-[90%] bg-[#125c91] flex justify-center items-center rounded-md"
         >
           <Text className="text-lg font-medium text-white">ค้นหา</Text>
         </Pressable>

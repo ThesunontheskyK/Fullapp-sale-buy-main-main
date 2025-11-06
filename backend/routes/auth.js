@@ -91,7 +91,7 @@ router.post('/login', async (req, res, next) => {
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      return res.status(401).json({
+      return res.status(500).json({
         success: false,
         message: 'Email หรือ Password ไม่ถูกต้อง'
       });
@@ -101,7 +101,7 @@ router.post('/login', async (req, res, next) => {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({
+      return res.status(500).json({
         success: false,
         message: 'Email หรือ Password ไม่ถูกต้อง'
       });
