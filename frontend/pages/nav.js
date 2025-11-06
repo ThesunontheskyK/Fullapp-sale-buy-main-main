@@ -12,7 +12,7 @@ export default function Nav() {
   };
 
   return (
-    <View className="h-[6vh] w-screen flex flex-row justify-around items-center bg-white">
+    <View className="h-[6.5vh] w-screen flex flex-row justify-around items-center bg-white rounded rounded-t-[30px]">
 
       <Pressable onPress={() => handlePress("Home")} className="w-14 h-20 flex items-center justify-center">
         <AntDesign name="home" size={22} color={route.name === "Home" ? "#125c91" : "#6B6B6B"}/>

@@ -12,7 +12,6 @@ export default function RoleSelectionModal({
   handleCloseModal,
   setBusinessName,
   businessName,
-  setErrorRoomName,
   errorRoomName
 }) {
   return (
@@ -76,13 +75,13 @@ export default function RoleSelectionModal({
 
           {/* Error Message */}
           {!errorRole && (
-            <Text className="text-center py-2  text-red-500 font-semibold">
+            <Text className="text-center py-3  text-sm  text-red-500 font-semibold">
               กรุณาเลือกบทบาทผู้สร้างธุรกรรม
             </Text>
           )}
 
           {!errorRoomName && (
-            <Text className="text-center py-2  text-red-500 font-semibold">
+            <Text className="text-center py-3 text-sm  text-red-500 font-semibold">
               กรุณากรอกชื่อธุรกรรม
             </Text>
           )}

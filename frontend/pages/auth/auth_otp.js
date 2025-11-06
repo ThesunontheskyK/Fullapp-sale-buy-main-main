@@ -90,7 +90,7 @@ export default function OtpVerification({ route, navigation }) {
 
           <Pressable
             onPress={handleVerify}
-            className="w-full bg-[#07439B] h-16 flex justify-center items-center rounded-md absolute bottom-0"
+            className="w-full bg-[#125c91] h-16 flex justify-center items-center rounded-md absolute -bottom-20"
           >
             <Text className="text-white text-lg font-medium">Verify</Text>
           </Pressable>

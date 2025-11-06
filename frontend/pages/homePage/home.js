@@ -6,6 +6,7 @@ import {
   Keyboard,
   Platform,
   ScrollView,
+  StatusBar
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Nav from "../nav";
@@ -80,14 +81,15 @@ export default function HomePage({ navigation, route }) {
   // Render
   // --------------------------
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-white " edges={["top", "bottom"]}>
+      <StatusBar barStyle="light-content" backgroundColor="#125c91" />
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View className="flex-1 overflow-hidden">
-            <ScrollView
+          <View className="flex-1  overflow-hidden">
+            <View
               className="flex-1"
               contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
               keyboardShouldPersistTaps="handled"
@@ -107,7 +109,7 @@ export default function HomePage({ navigation, route }) {
               <ActionButtons handleCreate={handleCreate} />
 
               <PromotionSection />
-            </ScrollView>
+            </View>
 
             <View className="absolute bottom-0 left-0 right-0">
               <Nav navigation={navigation} />

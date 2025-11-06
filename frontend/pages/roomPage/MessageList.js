@@ -36,7 +36,7 @@ export default function MessageList({ messages, currentUserId, flatListRef }) {
             <View
               className={`px-6 py-3 rounded-2xl max-w-[100%] shadow-sm ${
                 isSystemMsg
-                  ? "bg-green-100 rounded-lg"
+                  ? "text-[#125c91] bg-gray-200 rounded-md"
                   : isQuotation
                   ? "bg-white border border-black/10"
                   : isCurrentUser

@@ -9,8 +9,8 @@ export default function LogoutPopup({ visible, onClose, onConfirm }) {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <View className="flex-1 bg-black/30 justify-center items-center px-4">
-        <View className="bg-white w-[80%] rounded-2xl p-6 shadow-lg">
+      <View className="flex-1  bg-black/30 justify-center items-center px-4">
+        <View className="bg-white w-[90%] rounded-2xl p-6 shadow-lg">
           <Text className="text-lg font-bold text-center mb-2 text-gray-800">
             ยืนยันการออกจากระบบ
           </Text>
