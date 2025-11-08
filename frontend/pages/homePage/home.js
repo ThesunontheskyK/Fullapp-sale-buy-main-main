@@ -21,6 +21,7 @@ import RoleSelectionModal from "./RoleSelectionModel";
 import RoomCodeModal from "./RoomCodeModal";
 
 export default function HomePage({ navigation, route }) {
+
   const { userId } = route.params || {};
 
   // --------------------------
@@ -51,35 +52,27 @@ export default function HomePage({ navigation, route }) {
       return;
     }
 
-    // เข้าห้องเลยโดยไม่ต้องเลือก role (ระบบจะกำหนดให้)
     await joinRoomWithCode(Idroom);
   };
 
   const joinRoomWithCode = async (roomCode) => {
+
     try {
       setIsLoading(true);
       const response = await api.post(`/chat/rooms/${roomCode}/join`);
 
-      if (response.data.success) {
-        const assignedRole = response.data.data.assignedRole;
+      if (response.data.success === true) {
+        
         setNotFound(false);
         setErrorRoom("");
         setIdroom("");
 
-        const roleName = assignedRole === 'buyer' ? 'ผู้ซื้อ' : 'ผู้ขาย';
-        Alert.alert(
-          "เข้าร่วมห้องสำเร็จ",
-          `คุณเข้าร่วมห้องในฐานะ ${roleName}`,
-          [
-            {
-              text: "เข้าสู่ห้องแชท",
-              onPress: () => navigation.navigate("Room", {
-                Idroom: roomCode,
-                role: assignedRole
-              })
-            }
-          ]
-        );
+        return navigation.navigate("Room", {
+          Idroom: roomCode,
+          role: response.data.data.role,
+          userId: userId
+        });
+
       }
     } catch (error) {
       console.error("Error joining room:", error);

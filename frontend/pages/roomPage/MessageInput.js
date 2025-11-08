@@ -8,7 +8,9 @@ export default function MessageInput({
   currentUserRole,
   hasSentQuotation,
   onOpenQuotationModal,
-}) {
+}) 
+{
+  console.log("Rendering MessageInput - Current User Role:", currentUserRole, "Has Sent Quotation:", hasSentQuotation);
   return (
     <View className="bg-white border-t border-gray-200 px-4 py-3">
       <View className="flex-row items-end space-x-2 gap-3">
@@ -17,7 +19,7 @@ export default function MessageInput({
             className="px-3 py-2 rounded-full bg-[#125c91]" 
             onPress={onOpenQuotationModal}
           >
-            <Text className="text-white py-1 font-semibold">ส่งใบเสนอราคา</Text>
+            <Text className="text-white py-1 font-semibold"> ส่งใบเสนอราคา</Text>
           </Pressable>
         )}
         <View className="flex-1 bg-gray-100 rounded-3xl px-4 max-h-24">
