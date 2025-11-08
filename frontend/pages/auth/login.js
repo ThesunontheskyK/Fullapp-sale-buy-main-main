@@ -4,7 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import api from "../../config/api";
 
-export default function Login({ navigation }) {
+export default function Login({ navigation , route }) {
+
+  const { setUserId } = route.params || {};
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -24,11 +27,13 @@ const handleLogin = async () => {
     if (response.status === 200 && response.data.success) {
       const { token, user } = response.data.data;
 
+      setUserId(user.id);
+
       await SecureStore.setItemAsync("token", token);
       await SecureStore.setItemAsync("user_id", user.id);
 
       setError("");
-      navigation.navigate("OTP", { email });
+      navigation.navigate("Home", { email });
     }
 
   } catch (error) {

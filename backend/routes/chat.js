@@ -97,9 +97,8 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
       });
     }
 
-    // ตรวจสอบว่าผู้ใช้เข้าห้องนี้แล้วหรือยัง
     if (chatRoom.users && chatRoom.users.has(req.user.id)) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
         message: 'คุณเป็นสมาชิกห้องนี้อยู่แล้ว'
       });
@@ -170,22 +169,24 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
 // @route   GET /api/chat/rooms
 // @desc    ดึงรายการห้องแชททั้งหมดของผู้ใช้
 // @access  Private
+// @route   GET /api/chat/rooms
 router.get('/rooms', protect, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // ค้นหาห้องแชทที่ user เป็นสมาชิก
-    const allRooms = await ChatRoom.find({ status: 'active' });
+    const allRooms = await ChatRoom.find({ status: 'active' })
+      .select('RoomID roomName users messages status trackingNumber updatedAt');
 
     const chatRooms = allRooms.filter(room => {
-      return room.users && room.users.has(userId);
+      return room.users && (room.users.has?.(userId) || room.users[userId]);
     });
 
-    // แปลง Map เป็น Object สำหรับส่ง response
+    // ⬇️ แก้ตรงนี้!
     const formattedRooms = chatRooms.map(room => ({
       RoomID: room.RoomID,
-      users: Object.fromEntries(room.users || new Map()),
-      messages: Object.fromEntries(room.messages || new Map()),
+      roomName: room.roomName,
+      users: Object.fromEntries(room.users instanceof Map ? room.users : Object.entries(room.users || {})),
+      messages: Object.fromEntries(room.messages instanceof Map ? room.messages : Object.entries(room.messages || {})),
       status: room.status,
       trackingNumber: room.trackingNumber,
       updatedAt: room.updatedAt
@@ -227,6 +228,7 @@ router.get('/rooms/:roomId', protect, async (req, res, next) => {
       data: {
         chatRoom: {
           RoomID: chatRoom.RoomID,
+          roomName: chatRoom.roomName,
           users: Object.fromEntries(chatRoom.users || new Map()),
           messages: Object.fromEntries(chatRoom.messages || new Map()),
           status: chatRoom.status,

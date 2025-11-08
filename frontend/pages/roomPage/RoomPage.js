@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from 'expo-clipboard';
+import * as Clipboard from "expo-clipboard";
 import api from "../../config/api";
 import socketService from "../../services/socket";
 import MessageList from "./MessageList";
@@ -20,13 +20,20 @@ import TrackingModal from "./TrackingModal";
 import DeliveryActions from "./DeliveryActions";
 
 export default function RoomPage({ navigation, route }) {
-
+  // 1. รับค่าจาก route.params
   const { userId, Idroom, room_number, role } = route.params || {};
 
-  const roomId = Idroom ? Idroom.toString() : room_number ? room_number.toString() : "";
+  const roomId = Idroom
+    ? Idroom.toString()
+    : room_number
+      ? room_number.toString()
+      : "";
+
+  // 2. ประกาศ State
   const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState(null);
+  const [currentUserRole, setCurrentUserRole] = useState(role || "buyer"); // กำหนด Role ตั้งต้นจาก params
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const flatListRef = useRef(null);
@@ -42,7 +49,7 @@ export default function RoomPage({ navigation, route }) {
   const [trackingModalVisible, setTrackingModalVisible] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
 
-  // โหลดข้อมูลห้องจาก API
+  // โหลดข้อมูลห้องจาก API และกำหนด Role
   useEffect(() => {
     const fetchRoomData = async () => {
       try {
@@ -53,24 +60,24 @@ export default function RoomPage({ navigation, route }) {
           const roomData = response.data.data.chatRoom;
           setRoom(roomData);
 
-          // แปลง messages object เป็น array
-          const messagesArray = Object.entries(roomData.messages || {}).map(([id, msg]) => ({
-            id,
-            ...msg,
-          }));
-          setMessages(messagesArray);
+          const messagesArray = Object.entries(roomData.messages || {}).map(
+            ([id, msg]) => ({
+              id,
+              ...msg,
+            })
+          );
 
-          // หา userId ปัจจุบันจาก users object
-          const userEntries = Object.entries(roomData.users);
-          if (userEntries.length > 0) {
-            // ใช้ userId จาก params ถ้ามี ไม่งั้นใช้ตัวแรกใน users
-            const foundUserId = userId || userEntries[0][0];
-            setCurrentUserId(foundUserId);
-          }
+          setMessages(messagesArray);
+          setCurrentUserId(userId);
+
+          const fetchedRole = roomData.users?.[userId]?.role;
+          setCurrentUserRole(fetchedRole);
+          console.log("Fetched Role:", roomData.users?.[userId], fetchedRole);
+          console.log(userId);
         }
       } catch (error) {
-        console.error('Error fetching room:', error);
-        alert('ไม่สามารถโหลดข้อมูลห้องได้');
+        console.error("Error fetching room:", error);
+        alert("ไม่สามารถโหลดข้อมูลห้องได้");
       } finally {
         setLoading(false);
       }
@@ -79,9 +86,9 @@ export default function RoomPage({ navigation, route }) {
     if (roomId) {
       fetchRoomData();
     }
-  }, [roomId]);
+  }, [roomId, userId]); // เพิ่ม userId และ role ใน dependency
 
-  // เชื่อมต่อ Socket.io
+  // เชื่อมต่อ Socket.io (โค้ดเดิม)
   useEffect(() => {
     socketService.connect();
 
@@ -90,9 +97,7 @@ export default function RoomPage({ navigation, route }) {
 
       // รับข้อความใหม่
       socketService.onReceiveMessage((message) => {
-        console.log('Received message:', message);
         setMessages((prevMessages) => {
-          // ตรวจสอบว่ามีข้อความนี้อยู่แล้วหรือไม่
           const exists = prevMessages.some((msg) => msg.id === message.id);
           if (exists) {
             return prevMessages;
@@ -100,7 +105,6 @@ export default function RoomPage({ navigation, route }) {
           return [...prevMessages, message];
         });
 
-        // Auto scroll to bottom
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
@@ -114,6 +118,9 @@ export default function RoomPage({ navigation, route }) {
       socketService.offReceiveMessage();
     };
   }, [roomId]);
+  // ----------------------------------------------------
+  // โค้ดที่เหลือยังคงเป็น Logic เดิม
+  // ----------------------------------------------------
 
   const handleTextChange = useCallback((text) => setInputText(text), []);
 
@@ -122,23 +129,20 @@ export default function RoomPage({ navigation, route }) {
 
     try {
       const messageText = inputText;
-      setInputText(""); // Clear input immediately
+      setInputText("");
 
-      // บันทึกข้อความลง database
       const response = await api.post(`/chat/rooms/${roomId}/messages`, {
         text: messageText,
-        type: 'text',
+        type: "text",
       });
 
       if (response.data.success) {
         const newMsg = response.data.data.message;
-
-        // ส่งข้อความผ่าน Socket.io
         socketService.sendMessage(roomId, newMsg);
       }
     } catch (error) {
-      console.error('Error sending message:', error);
-      alert('ไม่สามารถส่งข้อความได้');
+      console.error("Error sending message:", error);
+      alert("ไม่สามารถส่งข้อความได้");
     }
   };
 
@@ -152,7 +156,10 @@ export default function RoomPage({ navigation, route }) {
     await Clipboard.setStringAsync(roomId);
   };
 
-  // ถ้ายังโหลดข้อมูลอยู่
+  // ----------------------------------------------------
+  // Render Logic
+  // ----------------------------------------------------
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
@@ -162,7 +169,6 @@ export default function RoomPage({ navigation, route }) {
     );
   }
 
-  // ถ้าไม่พบห้อง
   if (!room) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
@@ -171,10 +177,10 @@ export default function RoomPage({ navigation, route }) {
     );
   }
 
-  const currentUser = room.users?.[currentUserId];
-  const currentUserRole = currentUser?.role || role || "buyer";
+  // const currentUser = room.users?.[currentUserId]; // ไม่จำเป็นต้องใช้แล้ว
   const RoomIdname = room.RoomID;
 
+  // Logic การแสดงผล (ใช้ currentUserRole ที่เป็น State ใหม่)
   const pendingQuotations = messages.filter(
     (msg) =>
       msg.type === "quotation" &&
@@ -189,8 +195,7 @@ export default function RoomPage({ navigation, route }) {
 
   const hasTracking = messages.some(
     (msg) =>
-      msg.type === "system" &&
-      msg.text?.startsWith("ผู้ขายได้กรอกเลขขนส่ง")
+      msg.type === "system" && msg.text?.startsWith("ผู้ขายได้กรอกเลขขนส่ง")
   );
 
   const hasConfirmedDelivery = messages.some(
@@ -200,36 +205,59 @@ export default function RoomPage({ navigation, route }) {
   );
 
   const paidQuotations = messages.filter(
-    (msg) =>
-      msg.type === "quotation" &&
-      msg.quotation.status === true
+    (msg) => msg.type === "quotation" && msg.quotation.status === true
   );
 
-  const showTrackingButton = currentUserRole === "seller" && paidQuotations.length > 0 && !hasTracking;
+  const showTrackingButton =
+    currentUserRole === "seller" && paidQuotations.length > 0 && !hasTracking;
 
+  // ... (sendQuotation, handlePayQuotation, handleSendTrackingNumber, handleConfirmDelivery)
+  // (ฟังก์ชันเหล่านี้ไม่ถูกเปลี่ยนแปลง)
+  // ... (โค้ดเดิม)
 
-  // ใบเสอนสินค้า
-  const sendQuotation = () => {
+  const sendQuotation = async () => {
     if (!quotationData.productName || !quotationData.price) {
       return alert("กรุณากรอกชื่อสินค้าและราคา");
-    }
+    } // 1. เตรียมข้อมูลสำหรับส่งไป Backend
 
-    const newQuotation = {
-      id: Date.now().toString(),
-      sender_id: currentUserId,
+    const bodyData = {
+      text: `ใบเสนอราคา: ${quotationData.productName}`,
       type: "quotation",
-      quotation: { ...quotationData, status: false },
-      timestamp: Math.floor(Date.now() / 1000),
+      quotation: {
+        productName: quotationData.productName, // 🛑 แก้ไขตรงนี้: ส่ง details เป็น String ตรงๆ
+        details: quotationData.details || "",
+        images: quotationData.images || "",
+        price: quotationData.price,
+        status: false,
+      },
     };
 
-    setMessages([...messages, newQuotation]);
-    setQuotationData({ productName: "", details: "", images: "", price: "" });
-    setModalVisible(false);
+    try {
+      // 2. ส่งข้อมูลไปที่ Backend
+      const response = await api.post(
+        `/chat/rooms/${roomId}/messages`,
+        bodyData
+      );
+
+      if (response.data.success) {
+        const newMsg = response.data.data.message; // 3. อัปเดต UI และส่งผ่าน Socket
+        setMessages((prev) => [...prev, newMsg]);
+        socketService.sendMessage(roomId, newMsg);
+        setQuotationData({
+          productName: "",
+          details: "",
+          images: "",
+          price: "",
+        });
+        setModalVisible(false);
+      } else {
+      }
+    } catch (error) {
+      console.error("Error sending quotation:", error);
+    }
   };
 
-  // ชำระงิน
   const handlePayQuotation = (quotationId) => {
-
     setMessages((prev) =>
       prev.map((msg) =>
         msg.id === quotationId
@@ -248,7 +276,6 @@ export default function RoomPage({ navigation, route }) {
     };
 
     setMessages((prev) => [...prev, paidMsg]);
-
   };
 
   const handleSendTrackingNumber = () => {
@@ -278,7 +305,13 @@ export default function RoomPage({ navigation, route }) {
   };
 
   const showDeliveryButton =
-    pendingQuotations.length === 0 && hasTracking && currentUserRole === "buyer" && !hasConfirmedDelivery;
+    pendingQuotations.length === 0 &&
+    hasTracking &&
+    currentUserRole === "buyer" &&
+    !hasConfirmedDelivery;
+  // ----------------------------------------------------
+  // Return UI
+  // ----------------------------------------------------
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
@@ -290,7 +323,7 @@ export default function RoomPage({ navigation, route }) {
           <View className="flex-row items-center justify-between w-full">
             <TouchableOpacity
               onPress={() => navigation.goBack()}
-              className="w-10 h-10  rounded-full items-center justify-center mr-3"
+              className="w-10 h-10  rounded-full items-center justify-center mr-3"
             >
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
@@ -298,14 +331,16 @@ export default function RoomPage({ navigation, route }) {
               หมายเลขห้อง : {RoomIdname}
             </Text>
             <TouchableOpacity onPress={handleCopy}>
-              <Text className="font-semibold text-white border-b-2 border-white/50">คัดลอก</Text>
+              <Text className="font-semibold text-white border-b-2 border-white/50">
+                คัดลอก
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
 
-      <KeyboardAvoidingView 
-        className="flex-1" 
+      <KeyboardAvoidingView
+        className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
       >
@@ -317,12 +352,17 @@ export default function RoomPage({ navigation, route }) {
           />
 
           {pendingQuotations.map((msg) => (
-            <View key={msg.id} className="flex-row px-9 mb-2 gap-2 justify-between items-center">
+            <View
+              key={msg.id}
+              className="flex-row px-9 mb-2 py-2 gap-2 bg-transparent  justify-between items-center"
+            >
               <TouchableOpacity
                 className="w-full bg-[#125c91] py-3 rounded-lg items-center justify-center shadow"
                 onPress={() => handlePayQuotation(msg.id)}
               >
-                <Text className="text-white font-semibold text-center">ชำระเงิน</Text>
+                <Text className="text-white font-semibold text-center">
+                  ชำระเงิน
+                </Text>
               </TouchableOpacity>
             </View>
           ))}
@@ -362,7 +402,12 @@ export default function RoomPage({ navigation, route }) {
         quotationData={quotationData}
         onClose={() => {
           setModalVisible(false);
-          setQuotationData({ productName: "", details: "", images: "", price: "" });
+          setQuotationData({
+            productName: "",
+            details: "",
+            images: "",
+            price: "",
+          });
         }}
         onSend={sendQuotation}
         onUpdateData={setQuotationData}

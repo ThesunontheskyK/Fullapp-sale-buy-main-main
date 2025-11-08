@@ -42,7 +42,7 @@ export default function ProfilePage({ route, navigation }) {
 
   const handleLogout = async() => {
     try {
-      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user_id');
       setPopupVisible(false);
       navigation.navigate("Login");
     } catch(error) {

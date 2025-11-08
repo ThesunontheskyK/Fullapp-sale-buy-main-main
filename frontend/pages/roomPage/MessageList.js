@@ -12,20 +12,16 @@ export default function MessageList({ messages, currentUserId, flatListRef }) {
       ref={flatListRef}
       data={messages}
       keyExtractor={(item) => item.id}
-      className="flex-1 bg-gray-50"
+      className="flex-1 bg-gray-50 border border-black/5"
       contentContainerStyle={{ 
         padding: 16, 
-        paddingBottom: 20
+        paddingBottom: 20,
+        flexGrow: 1,
+        justifyContent: 'flex-end'
       }}
       showsVerticalScrollIndicator={false}
-      onContentSizeChange={() =>
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50)
-      }
+      inverted={false}
       keyboardShouldPersistTaps="handled"
-      maintainVisibleContentPosition={{
-        minIndexForVisible: 0,
-        autoscrollToTopThreshold: 10,
-      }}
       renderItem={({ item }) => {
         const isQuotation = item.type === "quotation";
         const isCurrentUser = item.sender_id === currentUserId;
@@ -34,29 +30,29 @@ export default function MessageList({ messages, currentUserId, flatListRef }) {
         return (
           <View className={`mb-3 ${isSystemMsg ? "items-center" : isCurrentUser ? "items-end" : "items-start"}`}>
             <View
-              className={`px-6 py-3 rounded-2xl max-w-[100%] shadow-sm ${
+              className={`px-4 py-3 rounded-2xl shadow-sm ${
                 isSystemMsg
-                  ? "text-[#125c91] bg-gray-200 rounded-md"
+                  ? "bg-gray-200 rounded-md"
                   : isQuotation
-                  ? "bg-white border border-black/10"
+                  ? "bg-white border border-black/10 max-w-[85%]"
                   : isCurrentUser
-                  ? "bg-blue-500 rounded-br-md"
-                  : "bg-white border border-gray-200 rounded-bl-md"
+                  ? "bg-blue-500 rounded-br-md max-w-[75%]"
+                  : "bg-white border border-gray-200 rounded-bl-md max-w-[75%]"
               }`}
             >
               {isSystemMsg ? (
-                <Text className="text-gray-500 font-semibold">{item.text || ""}</Text>
+                <Text className="text-gray-500 font-semibold text-sm">{item.text || ""}</Text>
               ) : isQuotation ? (
-                <View className="w-60 flex gap-4">
+                <View className="flex gap-3">
                   <Text className="font-semibold text-black/60">ใบเสนอราคา</Text>
-                  <Text className="text-gray-500">{item.quotation.productName || ""}</Text>
-                  <View className="flex flex-row justify-between border-t border-b border-black/20 py-4 text-gray-500 text-sm">
-                    <Text className="font-semibold text-black/60">ราคารวมสุทธิ</Text>
-                    <Text className="font-semibold text-black/60">฿ {item.quotation.price || ""}</Text>
+                  <Text className="text-gray-500 text-sm">{item.quotation.productName || ""}</Text>
+                  <View className="flex flex-row justify-between border-t border-b border-black/20 py-3">
+                    <Text className="font-semibold text-black/60 text-sm">ราคารวมสุทธิ</Text>
+                    <Text className="font-semibold text-black/60 text-sm">฿ {item.quotation.price || ""}</Text>
                   </View>
                   <View className="flex flex-row justify-between py-2">
-                    <Text className="font-semibold text-blue-500">ดูฉบับเต็ม</Text>
-                    <Text className="font-semibold text-blue-500">ดาวโหลด</Text>
+                    <Text className="font-semibold text-blue-500 text-sm">ดูฉบับเต็ม</Text>
+                    <Text className="font-semibold text-blue-500 text-sm">ดาวน์โหลด</Text>
                   </View>
                 </View>
               ) : (
