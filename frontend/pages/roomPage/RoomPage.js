@@ -1,47 +1,52 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Text,
   View,
   KeyboardAvoidingView,
-  Platform,
   StatusBar,
   TouchableOpacity,
   ActivityIndicator,
+  Pressable
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import api from "../../config/api";
-import socketService from "../../services/socket";
-import MessageList from "./MessageList";
-import MessageInput from "./MessageInput";
-import QuotationModal from "./QuotationModal";
-import TrackingModal from "./TrackingModal";
-import DeliveryActions from "./DeliveryActions";
-import { useHeaderHeight } from '@react-navigation/elements'
+import { useHeaderHeight } from "@react-navigation/elements";
 
+// Components
+import MessageList from "././components/MessageList";
+import MessageInput from "././components/MessageInput";
+import QuotationModal from "././components/QuotationModal";
+import TrackingModal from "././components/TrackingModal";
+import DeliveryActions from "././components/DeliveryActions";
+
+// Custom Hooks
+import { useRoomData } from "./hooks/useRoomData";
+import { useSocket } from "./hooks/useSocket";
+
+// Handlers
+import { sendTextMessage, handleDeleteQuotation, } from "./handlers/messageHandlers";
+import {sendQuotation,handlePayQuotation,} from "./handlers/quotationHandlers";
+import {handleSendTrackingNumber,handleConfirmDelivery,} from "./handlers/deliveryHandlers";
+
+// Helpers
+import { getRoomStatus } from "./helpers/roomHelpers";
 
 export default function RoomPage({ navigation, route }) {
   // 1. รับค่าจาก route.params
   const { userId, Idroom, room_number, role } = route.params || {};
 
-  const roomId = Idroom
-    ? Idroom.toString()
-    : room_number
-      ? room_number.toString()
-      : "";
-
-  // 2. ประกาศ State
-  const [room, setRoom] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const [currentUserRole, setCurrentUserRole] = useState(role || "buyer"); // กำหนด Role ตั้งต้นจาก params
-  const [messages, setMessages] = useState([]);
-  const [inputText, setInputText] = useState("");
-  const flatListRef = useRef(null);
+  const roomId = Idroom ? Idroom.toString() : room_number ? room_number.toString() : "";
 
   const height = useHeaderHeight();
-  
+
+  // 2. ใช้ Custom Hooks
+  const { room, loading, currentUserId, currentUserRole, messages,setMessages,} = useRoomData(roomId, userId, role);
+
+  useSocket(roomId, setMessages);
+
+  // 3. Local State
+  const [inputText, setInputText] = useState("");
 
   const [modalVisible, setModalVisible] = useState(false);
   const [quotationData, setQuotationData] = useState({
@@ -54,118 +59,46 @@ export default function RoomPage({ navigation, route }) {
   const [trackingModalVisible, setTrackingModalVisible] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
 
-
-  // โหลดข้อมูลห้องจาก API และกำหนด Role
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/chat/rooms/${roomId}`);
-
-        if (response.data.success) {
-          const roomData = response.data.data.chatRoom;
-          setRoom(roomData);
-
-          const messagesArray = Object.entries(roomData.messages || {}).map(
-            ([id, msg]) => ({
-              id,
-              ...msg,
-            })
-          );
-
-          setMessages(messagesArray);
-
-          setCurrentUserId(userId);
-
-          const fetchedRole = roomData.users?.[userId]?.role;
-          setCurrentUserRole(fetchedRole);
-
-        }
-      } catch (error) {
-        console.error("Error fetching room:", error);
-        alert("ไม่สามารถโหลดข้อมูลห้องได้");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (roomId) {
-      fetchRoomData();
-    }
-  }, [roomId, userId]); // เพิ่ม userId และ role ใน dependency
-
-  // เชื่อมต่อ Socket.io (โค้ดเดิม)
-  useEffect(() => {
-    socketService.connect();
-
-    if (roomId) {
-      socketService.joinRoom(roomId);
-
-      // รับข้อความใหม่
-      socketService.onReceiveMessage((message) => {
-        setMessages((prevMessages) => {
-          const exists = prevMessages.some((msg) => msg.id === message.id);
-          if (exists) {
-            return prevMessages;
-          }
-          return [...prevMessages, message];
-        });
-
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      });
-    }
-
-    return () => {
-      if (roomId) {
-        socketService.leaveRoom(roomId);
-      }
-      socketService.offReceiveMessage();
-    };
-  }, [roomId]);
-  // ----------------------------------------------------
-  // โค้ดที่เหลือยังคงเป็น Logic เดิม
-  // ----------------------------------------------------
-
+  // 4. Callbacks
   const handleTextChange = useCallback((text) => setInputText(text), []);
 
-  const sendMessage = async () => {
-    if (inputText.trim() === "") return;
-
-    try {
-      const messageText = inputText;
-      setInputText("");
-
-      const response = await api.post(`/chat/rooms/${roomId}/messages`, {
-        text: messageText,
-        type: "text",
-      });
-
-      if (response.data.success) {
-        const newMsg = response.data.data.message;
-        socketService.sendMessage(roomId, newMsg);
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
-      alert("ไม่สามารถส่งข้อความได้");
-    }
+  const handleSendMessage = () => {
+    sendTextMessage(roomId, inputText, setInputText);
   };
 
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 300);
+  const handleDeleteMsg = (messageId) => {
+    handleDeleteQuotation(messageId, setMessages);
+  };
+
+  const handleSendQuotation = () => {
+    sendQuotation( roomId, quotationData, setMessages, setQuotationData, setModalVisible);
+  };
+
+  const handlePay = (quotationId) => {
+    handlePayQuotation(quotationId, roomId, setMessages, navigation);
+  };
+
+  const handleSendTracking = () => {
+    handleSendTrackingNumber(trackingNumber, setMessages, setTrackingNumber,setTrackingModalVisible);
+  };
+
+  const handleConfirm = () => {
+    handleConfirmDelivery(setMessages);
   };
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(roomId);
   };
 
-  // ----------------------------------------------------
-  // Render Logic
-  // ----------------------------------------------------
+  // 5. คำนวณสถานะห้อง
+  const {
+    pendingQuotations,
+    hasSentQuotation,
+    showTrackingButton,
+    showDeliveryButton,
+  } = getRoomStatus(messages, currentUserId, currentUserRole);
 
+  // 6. Loading & Error States
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
@@ -183,138 +116,7 @@ export default function RoomPage({ navigation, route }) {
     );
   }
 
-  // const currentUser = room.users?.[currentUserId]; // ไม่จำเป็นต้องใช้แล้ว
-  const RoomIdname = room.RoomID;
-
-  // Logic การแสดงผล (ใช้ currentUserRole ที่เป็น State ใหม่)
-  const pendingQuotations = messages.filter(
-    (msg) =>
-      msg.type === "quotation" &&
-      msg.sender_id !== currentUserId &&
-      currentUserRole === "buyer" &&
-      msg.quotation.status === false
-  );
-
-  const hasSentQuotation = messages.some(
-    (msg) => msg.type === "quotation" && msg.sender_id === currentUserId
-  );
-
-  const hasTracking = messages.some(
-    (msg) =>
-      msg.type === "system" && msg.text?.startsWith("ผู้ขายได้กรอกเลขขนส่ง")
-  );
-
-  const hasConfirmedDelivery = messages.some(
-    (msg) =>
-      msg.type === "system" &&
-      msg.text?.startsWith("ผู้ซื้อยืนยันการได้รับของแล้ว")
-  );
-
-  const paidQuotations = messages.filter(
-    (msg) => msg.type === "quotation" && msg.quotation.status === true
-  );
-
-  const showTrackingButton =
-    currentUserRole === "seller" && paidQuotations.length > 0 && !hasTracking;
-
-  const sendQuotation = async () => {
-    if (!quotationData.productName || !quotationData.price) {
-      return alert("กรุณากรอกชื่อสินค้าและราคา");
-    } // 1. เตรียมข้อมูลสำหรับส่งไป Backend
-
-    const bodyData = {
-      text: `ใบเสนอราคา: ${quotationData.productName}`,
-      type: "quotation",
-      quotation: {
-        productName: quotationData.productName,
-        details: quotationData.details || "",
-        images: quotationData.images || "",
-        price: quotationData.price,
-        status: false,
-      },
-    };
-
-    try {
-      // 2. ส่งข้อมูลไปที่ Backend
-      const response = await api.post(
-        `/chat/rooms/${roomId}/messages`,
-        bodyData
-      );
-
-      if (response.data.success) {
-        const newMsg = response.data.data.message; // 3. อัปเดต UI และส่งผ่าน Socket
-        setMessages((prev) => [...prev, newMsg]);
-        socketService.sendMessage(roomId, newMsg);
-        setQuotationData({
-          productName: "",
-          details: "",
-          images: "",
-          price: "",
-        });
-        setModalVisible(false);
-      } else {
-      }
-    } catch (error) {
-      console.error("Error sending quotation:", error);
-    }
-  };
-
-  const handlePayQuotation = (quotationId) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg.id === quotationId
-          ? { ...msg, quotation: { ...msg.quotation, status: true } }
-          : msg
-      )
-    );
-
-    navigation.navigate("PaymentPage", { roomId: roomId });
-
-    const paidMsg = {
-      id: (Date.now() + 1).toString(),
-      type: "system",
-      text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
-      timestamp: Math.floor(Date.now() / 1000),
-    };
-
-    setMessages((prev) => [...prev, paidMsg]);
-  };
-
-  const handleSendTrackingNumber = () => {
-    if (!trackingNumber) return alert("กรุณากรอกเลขขนส่ง");
-
-    const systemMsg = {
-      id: Date.now().toString(),
-      type: "system",
-      text: `ผู้ขายได้กรอกเลขขนส่ง: ${trackingNumber}`,
-      timestamp: Math.floor(Date.now() / 1000),
-    };
-
-    setMessages((prev) => [...prev, systemMsg]);
-    setTrackingNumber("");
-    setTrackingModalVisible(false);
-  };
-
-  const handleConfirmDelivery = () => {
-    const confirmMsg = {
-      id: Date.now().toString(),
-      type: "system",
-      text: "ผู้ซื้อยืนยันการได้รับของแล้ว การซื้อขายเสร็จสมบูรณ์",
-      timestamp: Math.floor(Date.now() / 1000),
-    };
-
-    setMessages((prev) => [...prev, confirmMsg]);
-  };
-
-  const showDeliveryButton =
-    pendingQuotations.length === 0 &&
-    hasTracking &&
-    currentUserRole === "buyer" &&
-    !hasConfirmedDelivery;
-  // ----------------------------------------------------
-  // Return UI
-  // ----------------------------------------------------
-
+  // 7. Return UI
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
       <StatusBar barStyle="light-content" backgroundColor="#125c91" />
@@ -323,20 +125,20 @@ export default function RoomPage({ navigation, route }) {
       <View className="bg-[#125c91] shadow-sm relative z-50">
         <View className="flex-row items-center justify-between px-4 py-3">
           <View className="flex-row items-center justify-between w-full">
-            <TouchableOpacity
+            <Pressable
               onPress={() => navigation.goBack()}
-              className="w-10 h-10  rounded-full items-center justify-center mr-3"
+              className="w-10 h-10 rounded-full items-center justify-center mr-3"
             >
               <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
+            </Pressable>
             <Text className="text-white font-semibold text-lg">
-              หมายเลขห้อง : {RoomIdname}
+              หมายเลขห้อง : {room.RoomID}
             </Text>
-            <TouchableOpacity onPress={handleCopy}>
+            <Pressable onPress={handleCopy}>
               <Text className="font-semibold text-white border-b-2 border-white/50">
                 คัดลอก
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -346,39 +148,37 @@ export default function RoomPage({ navigation, route }) {
         behavior={"padding"}
         keyboardVerticalOffset={height}
       >
-          <MessageList
-            messages={messages}
-            currentUserId={currentUserId}
-          />
+        <MessageList
+          messages={messages}
+          currentUserId={currentUserId}
+          onDeleteMessage={handleDeleteMsg}
+        />
 
-          {pendingQuotations.map((msg) => (
-            <View
-              key={msg.id}
-              className="flex-row px-9 mb-2 py-2 gap-2 bg-transparent  justify-between items-center"
+        {pendingQuotations.map((msg) => (
+          <View
+            key={msg.id}
+            className="flex-row px-9 mb-2 py-2 gap-2 bg-transparent justify-between items-center"
+          >
+            <Pressable
+              className="w-full bg-[#125c91] py-3 rounded-lg items-center justify-center shadow"
+              onPress={() => handlePay(msg.id)}
             >
-              <TouchableOpacity
-                className="w-full bg-[#125c91] py-3 rounded-lg items-center justify-center shadow"
-                onPress={() => handlePayQuotation(msg.id)}
-              >
-                <Text className="text-white font-semibold text-center">
-                  ชำระเงิน
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+              <Text className="text-white font-semibold text-center"> ชำระเงิน</Text>
+            </Pressable>
+          </View>
+        ))}
 
-          {showDeliveryButton && (
-            <DeliveryActions
-              onCancel={() => alert("ยกเลิกสินค้าเรียบร้อย")}
-              onConfirm={handleConfirmDelivery}
-            />
-          )}
+        {showDeliveryButton && (
+          <DeliveryActions
+            onCancel={() => alert("ยกเลิกสินค้าเรียบร้อย")}
+            onConfirm={handleConfirm}
+          />
+        )}
 
         <MessageInput
           inputText={inputText}
           onTextChange={handleTextChange}
-          onSend={sendMessage}
-          onFocus={handleInputFocus}
+          onSend={handleSendMessage}
           currentUserRole={currentUserRole}
           hasSentQuotation={hasSentQuotation}
           onOpenQuotationModal={() => setModalVisible(true)}
@@ -387,12 +187,12 @@ export default function RoomPage({ navigation, route }) {
 
       {showTrackingButton && (
         <View className="absolute bottom-20 px-4 w-full">
-          <TouchableOpacity
+          <Pressable
             className="bg-[#125c91] border border-black/50 py-3 px-4 rounded-lg shadow-lg items-center justify-center"
             onPress={() => setTrackingModalVisible(true)}
           >
             <Text className="text-white font-semibold">กรอกเลขขนส่ง</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       )}
 
@@ -408,7 +208,7 @@ export default function RoomPage({ navigation, route }) {
             price: "",
           });
         }}
-        onSend={sendQuotation}
+        onSend={handleSendQuotation}
         onUpdateData={setQuotationData}
       />
 
@@ -416,7 +216,7 @@ export default function RoomPage({ navigation, route }) {
         visible={trackingModalVisible}
         trackingNumber={trackingNumber}
         onClose={() => setTrackingModalVisible(false)}
-        onSend={handleSendTrackingNumber}
+        onSend={handleSendTracking}
         onUpdateNumber={setTrackingNumber}
       />
     </SafeAreaView>
