@@ -10,8 +10,8 @@ export default function MessageInput({
   onOpenQuotationModal,
 }) 
 {
-  console.log("Rendering MessageInput - Current User Role:", currentUserRole, "Has Sent Quotation:", hasSentQuotation);
   return (
+    
     <View className="bg-white border-t border-gray-200 px-4 py-3">
       <View className="flex-row items-end space-x-2 gap-3">
         {currentUserRole === "seller" && !hasSentQuotation && (
