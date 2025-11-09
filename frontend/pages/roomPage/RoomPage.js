@@ -18,6 +18,8 @@ import MessageInput from "./MessageInput";
 import QuotationModal from "./QuotationModal";
 import TrackingModal from "./TrackingModal";
 import DeliveryActions from "./DeliveryActions";
+import { useHeaderHeight } from '@react-navigation/elements'
+
 
 export default function RoomPage({ navigation, route }) {
   // 1. รับค่าจาก route.params
@@ -38,6 +40,9 @@ export default function RoomPage({ navigation, route }) {
   const [inputText, setInputText] = useState("");
   const flatListRef = useRef(null);
 
+  const height = useHeaderHeight();
+  
+
   const [modalVisible, setModalVisible] = useState(false);
   const [quotationData, setQuotationData] = useState({
     productName: "",
@@ -48,6 +53,7 @@ export default function RoomPage({ navigation, route }) {
 
   const [trackingModalVisible, setTrackingModalVisible] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
+
 
   // โหลดข้อมูลห้องจาก API และกำหนด Role
   useEffect(() => {
@@ -337,8 +343,8 @@ export default function RoomPage({ navigation, route }) {
 
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        behavior={"padding"}
+        keyboardVerticalOffset={height}
       >
           <MessageList
             messages={messages}
