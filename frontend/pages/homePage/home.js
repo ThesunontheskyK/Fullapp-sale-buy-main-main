@@ -6,7 +6,8 @@ import {
   Keyboard,
   Platform,
   ScrollView,
-  StatusBar
+  StatusBar,
+  StyleSheet
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Nav from "../nav";
@@ -146,7 +147,7 @@ export default function HomePage({ navigation, route }) {
       <StatusBar barStyle="light-content" backgroundColor="#125c91" />
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <View className="flex-1  overflow-hidden">

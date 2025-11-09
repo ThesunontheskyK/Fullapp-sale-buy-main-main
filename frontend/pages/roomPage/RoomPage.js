@@ -68,12 +68,12 @@ export default function RoomPage({ navigation, route }) {
           );
 
           setMessages(messagesArray);
+
           setCurrentUserId(userId);
 
           const fetchedRole = roomData.users?.[userId]?.role;
           setCurrentUserRole(fetchedRole);
-          console.log("Fetched Role:", roomData.users?.[userId], fetchedRole);
-          console.log(userId);
+
         }
       } catch (error) {
         console.error("Error fetching room:", error);
@@ -211,10 +211,6 @@ export default function RoomPage({ navigation, route }) {
   const showTrackingButton =
     currentUserRole === "seller" && paidQuotations.length > 0 && !hasTracking;
 
-  // ... (sendQuotation, handlePayQuotation, handleSendTrackingNumber, handleConfirmDelivery)
-  // (ฟังก์ชันเหล่านี้ไม่ถูกเปลี่ยนแปลง)
-  // ... (โค้ดเดิม)
-
   const sendQuotation = async () => {
     if (!quotationData.productName || !quotationData.price) {
       return alert("กรุณากรอกชื่อสินค้าและราคา");
@@ -224,7 +220,7 @@ export default function RoomPage({ navigation, route }) {
       text: `ใบเสนอราคา: ${quotationData.productName}`,
       type: "quotation",
       quotation: {
-        productName: quotationData.productName, // 🛑 แก้ไขตรงนี้: ส่ง details เป็น String ตรงๆ
+        productName: quotationData.productName,
         details: quotationData.details || "",
         images: quotationData.images || "",
         price: quotationData.price,
@@ -318,7 +314,7 @@ export default function RoomPage({ navigation, route }) {
       <StatusBar barStyle="light-content" backgroundColor="#125c91" />
 
       {/* Header */}
-      <View className="bg-[#125c91] shadow-sm">
+      <View className="bg-[#125c91] shadow-sm relative z-50">
         <View className="flex-row items-center justify-between px-4 py-3">
           <View className="flex-row items-center justify-between w-full">
             <TouchableOpacity
@@ -342,13 +338,11 @@ export default function RoomPage({ navigation, route }) {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 25}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View className="flex-1">
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
-            flatListRef={flatListRef}
           />
 
           {pendingQuotations.map((msg) => (
@@ -373,7 +367,6 @@ export default function RoomPage({ navigation, route }) {
               onConfirm={handleConfirmDelivery}
             />
           )}
-        </View>
 
         <MessageInput
           inputText={inputText}

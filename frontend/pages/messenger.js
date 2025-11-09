@@ -31,7 +31,6 @@ export default function MessagesPage({ navigation, route }) {
           new Date(b.updatedAt) - new Date(a.updatedAt)
         );
         setRooms(sortedRooms);
-        console.log("Fetched rooms:", roomsList);
 
         
       }

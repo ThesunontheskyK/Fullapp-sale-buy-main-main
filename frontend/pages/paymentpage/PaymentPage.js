@@ -41,7 +41,6 @@ export default function PaymentPage({ navigation, route }) {
         throw new Error('ไม่พบข้อมูลใบเสนอราคาในห้องนี้');
       }
       
-      console.log(`✅ ดึงข้อมูลสำเร็จ: ${room.Payment.quotation.productName}`);
       setQuotationData(room.Payment.quotation);
       
     } catch (error) {
