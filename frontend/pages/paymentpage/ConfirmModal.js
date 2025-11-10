@@ -35,7 +35,6 @@ export default function ConfirmModal({
             </Text>
 
             <View className="w-full h-[40vh] mb-4 flex justify-center items-center">
-              {/* TODO: สร้าง QR Code จริงจาก API */}
               <Image
                 source={require("../../assets/Qrcode.jpg")}
                 className="w-full h-full"

@@ -1,8 +1,13 @@
 import api from "../../../config/api";
 import socketService from "../../../services/socket";
 
-export const sendQuotation = async ( roomId, quotationData, setMessages, setQuotationData, setModalVisible) => {
-
+export const sendQuotation = async (
+  roomId,
+  quotationData,
+  setMessages,
+  setQuotationData,
+  setModalVisible
+) => {
   if (!quotationData.productName || !quotationData.price) {
     return;
   }
@@ -26,6 +31,7 @@ export const sendQuotation = async ( roomId, quotationData, setMessages, setQuot
       const newMsg = response.data.data.message;
       setMessages((prev) => [...prev, newMsg]);
       socketService.sendMessage(roomId, newMsg);
+
       setQuotationData({
         productName: "",
         details: "",
@@ -39,24 +45,36 @@ export const sendQuotation = async ( roomId, quotationData, setMessages, setQuot
   }
 };
 
-export const handlePayQuotation = ( quotationId, roomId, setMessages, navigation ) => {
-    
-  setMessages((prev) =>
-    prev.map((msg) =>
-      msg.id === quotationId
-        ? { ...msg, quotation: { ...msg.quotation, status: true } }
-        : msg
-    )
-  );
+export const handlePayQuotation = async (
+  quotationId,
+  roomId,
+  setMessages,
+  navigation
+) => {
+  try {
+    const response = await api.post("/payment/create-from-quotation", {
+      chatRoomId: roomId,
+      quotationMessageId: quotationId,
+    });
 
-  navigation.navigate("PaymentPage", { roomId: roomId });
+    if (response.status === 201 || response.status === 200) {
+      console.log("Success create payment");
 
-  const paidMsg = {
-    id: (Date.now() + 1).toString(),
-    type: "system",
-    text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
-    timestamp: Math.floor(Date.now() / 1000),
-  };
+      navigation.navigate("PaymentPage", {
+        roomId: roomId,
+        paymentId: response.data.payment?._id,
+      });
 
-  setMessages((prev) => [...prev, paidMsg]);
+      // setMessages((prev) =>
+      //   prev.map((msg) =>
+      //     msg.id === quotationId
+      //       ? { ...msg, quotation: { ...msg.quotation, status: true } }
+      //       : msg
+      //   )
+      // );
+    }
+
+  } catch (error) {
+    console.log("Payment error:", error);
+  }
 };

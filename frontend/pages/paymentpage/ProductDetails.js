@@ -1,6 +1,6 @@
 import { Text, View } from "react-native";
 
-export default function ProductDetails({ quotationData }) {
+export default function ProductDetails({ quotationData , PaymentData }) {
   return (
     <View className="bg-white mx-4 mt-4 p-4 rounded-lg shadow-sm">
       <Text className="text-lg font-bold text-gray-800 mb-3">
@@ -15,7 +15,7 @@ export default function ProductDetails({ quotationData }) {
             {quotationData.details}
           </Text>
           <Text className="text-blue-600 font-bold text-lg mt-2">
-            ฿{quotationData.price}
+            ฿{PaymentData.price}
           </Text>
         </View>
       </View>

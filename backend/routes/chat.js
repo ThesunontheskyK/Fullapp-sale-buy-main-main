@@ -387,6 +387,7 @@ router.post('/rooms/:roomId/messages/upload', protect, uploadChatImage, async (r
 // @route   GET /api/chat/rooms/:roomId/messages
 // @desc    ดึงข้อความทั้งหมดในห้องแชท
 // @access  Private
+
 router.get('/rooms/:roomId/messages', protect, async (req, res, next) => {
   try {
     const roomId = req.params.roomId;
@@ -645,6 +646,7 @@ router.put('/rooms/:roomId/quotation/:messageId', protect, async (req, res, next
 
     // สร้างข้อความระบบแจ้งเตือน
     const systemMessageId = generateMessageID();
+    
     const systemMessage = {
       id: systemMessageId,
       type: 'system',

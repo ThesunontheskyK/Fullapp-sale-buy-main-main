@@ -75,13 +75,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║   SavePro Backend Server Running      ║
-║   Port: ${PORT}                           ║
-║   Environment: ${process.env.NODE_ENV}           ║
-╚════════════════════════════════════════╝
-  `);
+    console.log(`Server running on PORT : ` , PORT);
 });
 
 // ตั้งค่า Socket.io

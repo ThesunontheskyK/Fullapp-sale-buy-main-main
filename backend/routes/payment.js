@@ -1,20 +1,21 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Payment = require('../models/Payment');
-const ChatRoom = require('../models/ChatRoom');
-const { protect } = require('../middleware/auth');
+const Payment = require("../models/Payment");
+const ChatRoom = require("../models/ChatRoom");
+const { protect } = require("../middleware/auth");
 
 // @desc    สร้างรายการชำระเงินจากใบเสนอราคา
 // @route   POST /api/payment/create-from-quotation
 // @access  Private
-router.post('/create-from-quotation', protect, async (req, res) => {
+
+router.post("/create-from-quotation", protect, async (req, res) => {
   try {
     const { chatRoomId, quotationMessageId } = req.body;
 
     if (!chatRoomId || !quotationMessageId) {
       return res.status(400).json({
         success: false,
-        message: 'กรุณาระบุ chatRoomId และ quotationMessageId'
+        message: "กรุณาระบุ chatRoomId และ quotationMessageId",
       });
     }
 
@@ -23,38 +24,37 @@ router.post('/create-from-quotation', protect, async (req, res) => {
     if (!chatRoom) {
       return res.status(404).json({
         success: false,
-        message: 'ไม่พบห้องแชท'
+        message: "ไม่พบห้องแชท",
       });
     }
 
     // ดึงข้อความใบเสนอราคา
     const quotationMessage = chatRoom.messages.get(quotationMessageId);
-    if (!quotationMessage || quotationMessage.type !== 'quotation') {
+    if (!quotationMessage || quotationMessage.type !== "quotation") {
       return res.status(404).json({
         success: false,
-        message: 'ไม่พบใบเสนอราคา'
+        message: "ไม่พบใบเสนอราคา",
       });
     }
 
-    // ตรวจสอบว่าใบเสนอราคาถูกยอมรับแล้วหรือไม่
-    if (!quotationMessage.quotation || !quotationMessage.quotation.status) {
+    if (!quotationMessage.quotation || quotationMessage.quotation.status) {
       return res.status(400).json({
         success: false,
-        message: 'ใบเสนอราคายังไม่ได้รับการยอมรับ'
+        message: "ชำระเงินแล้ว",
       });
     }
 
     // ตรวจสอบว่ามี payment สำหรับใบเสนอราคานี้อยู่แล้วหรือไม่
     const existingPayment = await Payment.findOne({
       chatRoom: chatRoomId,
-      quotationMessageId: quotationMessageId
+      quotationMessageId: quotationMessageId,
     });
 
     if (existingPayment) {
-      return res.status(400).json({
-        success: false,
-        message: 'มีรายการชำระเงินสำหรับใบเสนอราคานี้อยู่แล้ว',
-        payment: existingPayment
+      return res.status(200).json({
+        success: true,
+        message: "รายการชำระเงินสำหรับใบเสนอราคานี้มีอยู่แล้ว",
+        payment: existingPayment,
       });
     }
 
@@ -64,9 +64,9 @@ router.post('/create-from-quotation', protect, async (req, res) => {
     let seller = null;
 
     for (const [userId, userData] of usersMap) {
-      if (userData.role === 'buyer') {
+      if (userData.role === "buyer") {
         buyer = { userId, name: userData.name };
-      } else if (userData.role === 'seller') {
+      } else if (userData.role === "seller") {
         seller = { userId, name: userData.name };
       }
     }
@@ -74,7 +74,7 @@ router.post('/create-from-quotation', protect, async (req, res) => {
     if (!buyer || !seller) {
       return res.status(400).json({
         success: false,
-        message: 'ไม่พบข้อมูล buyer หรือ seller ในห้องแชท'
+        message: "ไม่พบข้อมูล buyer หรือ seller ในห้องแชท",
       });
     }
 
@@ -83,12 +83,12 @@ router.post('/create-from-quotation', protect, async (req, res) => {
     if (isNaN(priceValue)) {
       return res.status(400).json({
         success: false,
-        message: 'ราคาในใบเสนอราคาไม่ถูกต้อง'
+        message: "ราคาในใบเสนอราคาไม่ถูกต้อง",
       });
     }
 
-    // สร้างรายการชำระเงิน
-    const payment = await Payment.create({
+    // เตรียมข้อมูลสำหรับบันทึก
+    const paymentData = {
       chatRoom: chatRoomId,
       quotationMessageId: quotationMessageId,
       buyer: buyer,
@@ -96,54 +96,73 @@ router.post('/create-from-quotation', protect, async (req, res) => {
       productInfo: {
         productName: quotationMessage.quotation.productName,
         details: quotationMessage.quotation.details,
-        images: quotationMessage.quotation.images
+        images: quotationMessage.quotation.images,
       },
       price: priceValue,
-      paymentStatus: 'pending',
-      statusHistory: [{
-        status: 'pending',
-        updatedAt: new Date(),
-        note: 'สร้างรายการชำระเงินจากใบเสนอราคา'
-      }]
-    });
+      paymentStatus: "pending",
+      statusHistory: [
+        {
+          status: "pending",
+          updatedAt: new Date(),
+          note: "สร้างรายการชำระเงินจากใบเสนอราคา",
+        },
+      ],
+    };
 
-    res.status(201).json({
+    // บันทึกลง MongoDB
+    const payment = await Payment.create(paymentData);
+
+    // ส่ง response 201 เมื่อบันทึกสำเร็จ
+    return res.status(201).json({
       success: true,
-      message: 'สร้างรายการชำระเงินสำเร็จ',
-      payment: payment
+      message: "สร้างรายการชำระเงินสำเร็จ",
+      payment: payment,
     });
-
   } catch (error) {
-    console.error('Error creating payment from quotation:', error);
-    res.status(500).json({
+    console.error("Error creating payment from quotation:", error);
+
+    // ถ้า error เกิดจากการ validation ของ Mongoose
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "ข้อมูลไม่ถูกต้อง",
+        error: error.message,
+      });
+    }
+
+    // Error อื่นๆ
+    return res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการสร้างรายการชำระเงิน',
-      error: error.message
+      message: "เกิดข้อผิดพลาดในการสร้างรายการชำระเงิน",
+      error: error.message,
     });
   }
 });
 
+
 // @desc    ดึงข้อมูลรายการชำระเงินจาก chatRoom
 // @route   GET /api/payment/room/:roomId
 // @access  Private
-router.get('/room/:roomId', protect, async (req, res) => {
+router.get("/room/:roomId", protect, async (req, res) => {
   try {
     const { roomId } = req.params;
 
-    const payments = await Payment.find({ chatRoom: roomId }).sort({ createdAt: -1 });
+    const payments = await Payment.find({ chatRoom: roomId }).sort({
+      createdAt: -1,
+    });
 
     res.json({
       success: true,
       count: payments.length,
-      payments: payments
+      payments: payments,
     });
-
+    
   } catch (error) {
-    console.error('Error fetching payments:', error);
+    console.error("Error fetching payments:", error);
     res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
-      error: error.message
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+      error: error.message,
     });
   }
 });
@@ -151,28 +170,27 @@ router.get('/room/:roomId', protect, async (req, res) => {
 // @desc    ดึงข้อมูลรายการชำระเงินจาก payment ID
 // @route   GET /api/payment/:id
 // @access  Private
-router.get('/:id', protect, async (req, res) => {
+router.get("/:id", protect, async (req, res) => {
   try {
     const payment = await Payment.findById(req.params.id);
 
     if (!payment) {
       return res.status(404).json({
         success: false,
-        message: 'ไม่พบรายการชำระเงิน'
+        message: "ไม่พบรายการชำระเงิน",
       });
     }
 
     res.json({
       success: true,
-      payment: payment
+      payment: payment,
     });
-
   } catch (error) {
-    console.error('Error fetching payment:', error);
+    console.error("Error fetching payment:", error);
     res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
-      error: error.message
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+      error: error.message,
     });
   }
 });
@@ -180,29 +198,25 @@ router.get('/:id', protect, async (req, res) => {
 // @desc    ดึงข้อมูลรายการชำระเงินของผู้ใช้ (ทั้ง buyer และ seller)
 // @route   GET /api/payment/my-payments
 // @access  Private
-router.get('/my-payments', protect, async (req, res) => {
+router.get("/my-payments", protect, async (req, res) => {
   try {
     const userId = req.user._id.toString();
 
     const payments = await Payment.find({
-      $or: [
-        { 'buyer.userId': userId },
-        { 'seller.userId': userId }
-      ]
+      $or: [{ "buyer.userId": userId }, { "seller.userId": userId }],
     }).sort({ createdAt: -1 });
 
     res.json({
       success: true,
       count: payments.length,
-      payments: payments
+      payments: payments,
     });
-
   } catch (error) {
-    console.error('Error fetching user payments:', error);
+    console.error("Error fetching user payments:", error);
     res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
-      error: error.message
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+      error: error.message,
     });
   }
 });
@@ -210,7 +224,7 @@ router.get('/my-payments', protect, async (req, res) => {
 // @desc    ดึงข้อมูลรายละเอียดใบเสนอราคาจาก chatRoom และ messageId
 // @route   GET /api/payment/quotation/:roomId/:messageId
 // @access  Private
-router.get('/quotation/:roomId/:messageId', protect, async (req, res) => {
+router.get("/quotation/:roomId/:messageId", protect, async (req, res) => {
   try {
     const { roomId, messageId } = req.params;
 
@@ -219,16 +233,16 @@ router.get('/quotation/:roomId/:messageId', protect, async (req, res) => {
     if (!chatRoom) {
       return res.status(404).json({
         success: false,
-        message: 'ไม่พบห้องแชท'
+        message: "ไม่พบห้องแชท",
       });
     }
 
     // ดึงข้อความใบเสนอราคา
     const quotationMessage = chatRoom.messages.get(messageId);
-    if (!quotationMessage || quotationMessage.type !== 'quotation') {
+    if (!quotationMessage || quotationMessage.type !== "quotation") {
       return res.status(404).json({
         success: false,
-        message: 'ไม่พบใบเสนอราคา'
+        message: "ไม่พบใบเสนอราคา",
       });
     }
 
@@ -238,9 +252,9 @@ router.get('/quotation/:roomId/:messageId', protect, async (req, res) => {
     let seller = null;
 
     for (const [userId, userData] of usersMap) {
-      if (userData.role === 'buyer') {
+      if (userData.role === "buyer") {
         buyer = { userId, name: userData.name };
-      } else if (userData.role === 'seller') {
+      } else if (userData.role === "seller") {
         seller = { userId, name: userData.name };
       }
     }
@@ -248,7 +262,7 @@ router.get('/quotation/:roomId/:messageId', protect, async (req, res) => {
     // ตรวจสอบว่ามี payment อยู่แล้วหรือไม่
     const existingPayment = await Payment.findOne({
       chatRoom: roomId,
-      quotationMessageId: messageId
+      quotationMessageId: messageId,
     });
 
     res.json({
@@ -266,16 +280,15 @@ router.get('/quotation/:roomId/:messageId', protect, async (req, res) => {
         buyer: buyer,
         seller: seller,
         hasPayment: !!existingPayment,
-        paymentId: existingPayment?._id
-      }
+        paymentId: existingPayment?._id,
+      },
     });
-
   } catch (error) {
-    console.error('Error fetching quotation:', error);
+    console.error("Error fetching quotation:", error);
     res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
-      error: error.message
+      message: "เกิดข้อผิดพลาดในการดึงข้อมูล",
+      error: error.message,
     });
   }
 });

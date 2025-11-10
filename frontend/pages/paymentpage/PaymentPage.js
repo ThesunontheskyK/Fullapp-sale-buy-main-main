@@ -7,12 +7,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import PaymentData from '../../Payment.json';
 import PaymentHeader from './PaymentHeader';
 import ProductDetails from './ProductDetails';
 import PaymentMethods from './PaymentMethods';
 import PaymentSummary from './PaymentSummary';
 import ConfirmModal from './ConfirmModal';
+import { Fee } from "./Fee";
+import api from "../../config/api"
+import socket from "../../services/socket";
 
 export default function PaymentPage({ navigation, route }) {
   const { roomId } = route.params || {};
@@ -24,32 +26,32 @@ export default function PaymentPage({ navigation, route }) {
   const [quotationData, setQuotationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [PaymentData, setPaymentData]  = useState([]);
+  const [fee , setFee] = useState(0);
 
-  const fetchPaymentData = async (roomId) => {
-    
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const room = PaymentData.rooms.find(r => r.RoomID === roomId);
-      
-      if (!room) {
-        throw new Error(`ไม่พบข้อมูลห้อง ${roomId}`);
-      }
-      
-      if (!room.Payment || !room.Payment.quotation) {
-        throw new Error('ไม่พบข้อมูลใบเสนอราคาในห้องนี้');
-      }
-      
-      setQuotationData(room.Payment.quotation);
-      
-    } catch (error) {
-      console.error('Error fetching payment data:', error.message);
-      setError(error.message);
-    } finally {
-      setLoading(false);
+const fetchPaymentData = async (roomId) => {
+  try {
+    setLoading(true);
+    setError(null);
+
+    const response = await api.get(`/payment/room/${roomId}`);
+
+    if (response.data.success && response.data.payments.length > 0) {
+
+      const payment = response.data.payments[0];
+
+      setPaymentData(payment);
+      setQuotationData(payment.productInfo);
     }
-  };
+
+  } catch (error) {
+    console.error("Error fetching payment data:", error.message);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     if (roomId) {
@@ -70,23 +72,37 @@ export default function PaymentPage({ navigation, route }) {
 
     if (!quotationData) return ;
 
-    if (selectedPayment === "credit") {
 
-      if ( !creditAmount || parseFloat(creditAmount) < parseFloat(quotationData.price) + 50) {
 
-        Alert.alert("แจ้งเตือน", "จำนวนเครดิตไม่เพียงพอ");
+    // setConfirmModalVisible(true);
 
-        return;
-      }
-    }
+      const PaymentMsg = {
 
-    setConfirmModalVisible(true);
+        id: (Date.now() + 1).toString(),
+        type: "system",
+        text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
+        timestamp: Math.floor(Date.now() / 1000),
+
+      };
+
+    socket.sendMessage(roomId, PaymentMsg);
+
+    navigation.goBack();
+
+    
   };
 
   const handleConfirmPayment = async () => {
     setConfirmModalVisible(false);
     navigation.goBack();
   };
+
+  useEffect(() => {
+    if (PaymentData?.price) {
+      Fee(setFee, PaymentData.price);
+    }
+  }, [roomId, PaymentData?.price]);
+
 
   if (loading) {
     return (
@@ -97,7 +113,7 @@ export default function PaymentPage({ navigation, route }) {
     );
   }
 
-  if (error || !quotationData) {
+  if (error) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
         <Text className="text-red-600 mb-2">เกิดข้อผิดพลาด</Text>
@@ -112,14 +128,15 @@ export default function PaymentPage({ navigation, route }) {
     );
   }
 
-  const totalAmount = parseInt(quotationData.price) + 50;
+  const totalAmount = parseInt(PaymentData.price)  + fee;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
       <PaymentHeader navigation={navigation} />
+      {/* <Fee/> */}
 
       <ScrollView className="flex-1">
-        <ProductDetails quotationData={quotationData} />
+        <ProductDetails quotationData={quotationData} PaymentData={PaymentData} />
         
         <PaymentMethods
           selectedPayment={selectedPayment}
@@ -128,9 +145,10 @@ export default function PaymentPage({ navigation, route }) {
           onCreditAmountChange={setCreditAmount}
           quotationData={quotationData}
           setQrcode={setQrcode}
+          PaymentData={PaymentData}
         />
 
-        <PaymentSummary price={quotationData.price} />
+        <PaymentSummary price={PaymentData.price} fee={fee} />
       </ScrollView>
 
       <View className="bg-white border-t border-gray-200 p-4">

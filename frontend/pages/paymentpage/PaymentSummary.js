@@ -1,8 +1,7 @@
 import { Text, View } from "react-native";
 
-export default function PaymentSummary({ price }) {
+export default function PaymentSummary({ price , fee }) {
     
-  const fee = 50;
   const total = parseInt(price) + fee;
 
   return (

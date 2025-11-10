@@ -9,6 +9,7 @@ export const useSocket = (roomId, setMessages) => {
       socketService.joinRoom(roomId);
 
       socketService.onReceiveMessage((message) => {
+        
         setMessages((prevMessages) => {
           const exists = prevMessages.some((msg) => msg.id === message.id);
           if (exists) return prevMessages;
