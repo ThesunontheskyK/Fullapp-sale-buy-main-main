@@ -2,14 +2,14 @@ import { io } from 'socket.io-client';
 import { Platform } from 'react-native';
 
 const getSocketUrl = () => {
-  const CUSTOM_IP = 'http://10.104.185.216:5000';
+  const CUSTOM_IP = 'http://192.168.0.107:5000';
 
   if (CUSTOM_IP) {
     return CUSTOM_IP;
   }
 
   if (Platform.OS === 'android') {
-    return 'http://10.104.185.216:5000';
+    return 'http://192.168.0.107:5000';
   } else if (Platform.OS === 'ios') {
     return 'http://localhost:5000';
   } else {
@@ -86,6 +86,13 @@ class SocketService {
     }
   }
 
+  deleteMessage(roomId, messageId) {
+    if (this.socket && this.connected) {
+      this.socket.emit('delete-message', { roomId, messageId });
+      console.log('Delete message request sent:', messageId);
+    }
+  }
+
   onReceiveMessage(callback) {
     if (this.socket) {
       this.socket.on('receive-message', callback);
@@ -95,6 +102,18 @@ class SocketService {
   offReceiveMessage() {
     if (this.socket) {
       this.socket.off('receive-message');
+    }
+  }
+
+  onMessageDeleted(callback) {
+    if (this.socket) {
+      this.socket.on('message-deleted', callback);
+    }
+  }
+
+  offMessageDeleted() {
+    if (this.socket) {
+      this.socket.off('message-deleted');
     }
   }
 

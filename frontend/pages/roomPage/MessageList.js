@@ -1,7 +1,7 @@
-import React from "react";
-import { Text, View, FlatList, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { Text, View, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
 
-export default function MessageList({ messages, currentUserId , flatListRef }) {
+export default function MessageList({ messages, currentUserId, flatListRef, onDeleteMessage }) {
 
   const formatTime = (timestamp) =>
     new Date(timestamp * 1000).toLocaleTimeString("th-TH", {
@@ -48,13 +48,38 @@ export default function MessageList({ messages, currentUserId , flatListRef }) {
             : styles.otherUserText;
 
 
+          const handleLongPress = () => {
+            if (!isSystemMsg && isCurrentUser && onDeleteMessage) {
+              Alert.alert(
+                "ลบข้อความ",
+                "คุณต้องการลบข้อความนี้หรือไม่?",
+                [
+                  {
+                    text: "ยกเลิก",
+                    style: "cancel"
+                  },
+                  {
+                    text: "ลบ",
+                    style: "destructive",
+                    onPress: () => onDeleteMessage(item.id)
+                  }
+                ]
+              );
+            }
+          };
+
           return (
             <View
               style={[styles.messageWrapper, messageAlignment]}
             >
-              <View
-                style={messageBubbleStyle}
+              <TouchableOpacity
+                onLongPress={handleLongPress}
+                delayLongPress={500}
+                activeOpacity={isSystemMsg || !isCurrentUser ? 1 : 0.7}
               >
+                <View
+                  style={messageBubbleStyle}
+                >
                 {isSystemMsg ? (
                   <Text style={styles.systemText}>
                     {item.text || ""}
@@ -89,7 +114,8 @@ export default function MessageList({ messages, currentUserId , flatListRef }) {
                     {item.text || ""}
                   </Text>
                 )}
-              </View>
+                </View>
+              </TouchableOpacity>
               {!isSystemMsg && (
                 <Text
                   style={[styles.timestamp, isCurrentUser ? styles.textRight : styles.textLeft]}

@@ -109,6 +109,14 @@ export default function RoomPage({ navigation, route }) {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
       });
+
+      // รับ event ลบข้อความ
+      socketService.onMessageDeleted((data) => {
+        const { messageId } = data;
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== messageId)
+        );
+      });
     }
 
     return () => {
@@ -116,6 +124,7 @@ export default function RoomPage({ navigation, route }) {
         socketService.leaveRoom(roomId);
       }
       socketService.offReceiveMessage();
+      socketService.offMessageDeleted();
     };
   }, [roomId]);
   // ----------------------------------------------------
@@ -154,6 +163,29 @@ export default function RoomPage({ navigation, route }) {
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(roomId);
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    try {
+      const response = await api.delete(`/chat/rooms/${roomId}/messages/${messageId}`);
+
+      if (response.data.success) {
+        // ลบข้อความออกจาก state
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== messageId)
+        );
+
+        // ส่ง socket event เพื่อแจ้งผู้ใช้คนอื่น
+        socketService.deleteMessage(roomId, messageId);
+      }
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("ไม่สามารถลบข้อความได้");
+      }
+    }
   };
 
   // ----------------------------------------------------
@@ -343,6 +375,8 @@ export default function RoomPage({ navigation, route }) {
           <MessageList
             messages={messages}
             currentUserId={currentUserId}
+            flatListRef={flatListRef}
+            onDeleteMessage={handleDeleteMessage}
           />
 
           {pendingQuotations.map((msg) => (

@@ -103,6 +103,14 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('receive-message', message);
   });
 
+  // ลบข้อความ
+  socket.on('delete-message', (data) => {
+    const { roomId, messageId } = data;
+    console.log(`Message ${messageId} deleted in room ${roomId}`);
+    // แจ้งทุกคนในห้องว่ามีข้อความถูกลบ (รวมตัวเอง)
+    io.to(roomId).emit('message-deleted', { messageId, roomId });
+  });
+
   // ออกจากห้องแชท
   socket.on('leave-room', (roomId) => {
     socket.leave(roomId);

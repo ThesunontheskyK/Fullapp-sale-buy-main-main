@@ -12,7 +12,9 @@
       "Bash(\"/tmp/chat_analysis.md\")",
       "Bash(npx expo install:*)",
       "Bash(npm start:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

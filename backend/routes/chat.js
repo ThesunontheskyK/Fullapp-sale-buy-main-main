@@ -421,6 +421,65 @@ router.get('/rooms/:roomId/messages', protect, async (req, res, next) => {
   }
 });
 
+// @route   DELETE /api/chat/rooms/:roomId/messages/:messageId
+// @desc    ลบข้อความในห้องแชท (เฉพาะเจ้าของข้อความ)
+// @access  Private
+router.delete('/rooms/:roomId/messages/:messageId', protect, async (req, res, next) => {
+  try {
+    const { roomId, messageId } = req.params;
+
+    // ดึงข้อมูลห้องแชท
+    const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
+
+    if (!chatRoom) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบห้องแชท'
+      });
+    }
+
+    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชทหรือไม่
+    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
+      return res.status(403).json({
+        success: false,
+        message: 'คุณไม่มีสิทธิ์เข้าถึงห้องแชทนี้'
+      });
+    }
+
+    // ตรวจสอบว่าข้อความนี้มีอยู่จริง
+    const message = chatRoom.messages.get(messageId);
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบข้อความที่ต้องการลบ'
+      });
+    }
+
+    // ตรวจสอบว่าผู้ใช้เป็นเจ้าของข้อความหรือไม่
+    if (message.sender_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'คุณไม่มีสิทธิ์ลบข้อความนี้ เฉพาะผู้ส่งเท่านั้นที่สามารถลบได้'
+      });
+    }
+
+    // ลบข้อความออกจาก Map
+    chatRoom.messages.delete(messageId);
+    await chatRoom.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'ลบข้อความสำเร็จ',
+      data: {
+        messageId,
+        RoomID: roomId
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // @route   PUT /api/chat/rooms/:roomId/tracking
 // @desc    อัพเดทเลขพัสดุ
 // @access  Private
