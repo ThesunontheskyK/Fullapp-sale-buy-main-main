@@ -24,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/payment', require('./routes/payment'));
 
 // Root route
 app.get('/', (req, res) => {
@@ -49,6 +50,13 @@ app.get('/', (req, res) => {
         updateTracking: 'PUT /api/chat/rooms/:roomId/tracking (Protected) - อัพเดทเลขพัสดุ',
         completeRoom: 'PUT /api/chat/rooms/:roomId/complete (Protected) - ยืนยันการได้รับของ',
         updateQuotation: 'PUT /api/chat/rooms/:roomId/quotation/:messageId (Protected) - อัพเดทใบเสนอราคา'
+      },
+      payment: {
+        createQuotation: 'POST /api/payment/rooms/:roomId/quotation (Protected) - สร้างใบเสนอราคา',
+        getPayments: 'GET /api/payment/rooms/:roomId (Protected) - ดึงข้อมูล payment ทั้งหมดในห้อง',
+        getPayment: 'GET /api/payment/:paymentId (Protected) - ดึงข้อมูล payment เดียว',
+        updateQuotation: 'PUT /api/payment/rooms/:roomId/quotation/:messageId (Protected) - อัพเดทสถานะใบเสนอราคา',
+        deletePayment: 'DELETE /api/payment/:paymentId (Protected) - ลบ payment record'
       },
       socketIO: {
         events: 'Socket.io real-time events available',
