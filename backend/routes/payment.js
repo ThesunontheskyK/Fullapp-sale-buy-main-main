@@ -1,32 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middleware/auth');
 const Payment = require('../models/Payment');
 const ChatRoom = require('../models/ChatRoom');
+const { protect } = require('../middleware/auth');
 
-// Helper function: สร้าง Message ID ใหม่
-function generateMessageID() {
-  return Date.now().toString() + Math.floor(Math.random() * 1000).toString();
-}
-
-// @route   POST /api/payment/rooms/:roomId/quotation
-// @desc    สร้างใบเสนอราคาใหม่ (สำหรับผู้ขาย)
+// @desc    สร้างรายการชำระเงินจากใบเสนอราคา
+// @route   POST /api/payment/create-from-quotation
 // @access  Private
-router.post('/rooms/:roomId/quotation', protect, async (req, res, next) => {
+router.post('/create-from-quotation', protect, async (req, res) => {
   try {
-    const { roomId } = req.params;
-    const { productName, details, images, price } = req.body;
+    const { chatRoomId, quotationMessageId } = req.body;
 
-    // Validate ข้อมูล
-    if (!productName || !details || !price) {
+    if (!chatRoomId || !quotationMessageId) {
       return res.status(400).json({
         success: false,
-        message: 'กรุณากรอกข้อมูลให้ครบถ้วน (productName, details, price)'
+        message: 'กรุณาระบุ chatRoomId และ quotationMessageId'
       });
     }
 
-    // ตรวจสอบว่า room มีอยู่จริง
-    const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
+    // ดึงข้อมูลห้องแชท
+    const chatRoom = await ChatRoom.findOne({ RoomID: chatRoomId });
     if (!chatRoom) {
       return res.status(404).json({
         success: false,
@@ -34,152 +27,192 @@ router.post('/rooms/:roomId/quotation', protect, async (req, res, next) => {
       });
     }
 
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชท
-    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
+    // ดึงข้อความใบเสนอราคา
+    const quotationMessage = chatRoom.messages.get(quotationMessageId);
+    if (!quotationMessage || quotationMessage.type !== 'quotation') {
+      return res.status(404).json({
         success: false,
-        message: 'คุณไม่มีสิทธิ์เข้าถึงห้องแชทนี้'
+        message: 'ไม่พบใบเสนอราคา'
       });
     }
 
-    // สร้าง Payment record
-    const payment = await Payment.create({
-      RoomID: roomId,
-      sender_id: req.user.id,
-      type: 'quotation',
-      quotation: {
-        productName,
-        details,
-        images: images || '',
-        price,
-        status: false
-      },
-      timestamp: Math.floor(Date.now() / 1000)
+    // ตรวจสอบว่าใบเสนอราคาถูกยอมรับแล้วหรือไม่
+    if (!quotationMessage.quotation || !quotationMessage.quotation.status) {
+      return res.status(400).json({
+        success: false,
+        message: 'ใบเสนอราคายังไม่ได้รับการยอมรับ'
+      });
+    }
+
+    // ตรวจสอบว่ามี payment สำหรับใบเสนอราคานี้อยู่แล้วหรือไม่
+    const existingPayment = await Payment.findOne({
+      chatRoom: chatRoomId,
+      quotationMessageId: quotationMessageId
     });
 
-    // สร้างข้อความใน ChatRoom (เก็บ payment ใน messages)
-    const messageId = generateMessageID();
-    const paymentMessage = {
-      id: messageId,
-      sender_id: req.user.id,
-      type: 'quotation',
-      quotation: {
-        productName,
-        details,
-        images: images || '',
-        price,
-        status: false
-      },
-      timestamp: Math.floor(Date.now() / 1000)
-    };
-
-    if (!chatRoom.messages) {
-      chatRoom.messages = new Map();
+    if (existingPayment) {
+      return res.status(400).json({
+        success: false,
+        message: 'มีรายการชำระเงินสำหรับใบเสนอราคานี้อยู่แล้ว',
+        payment: existingPayment
+      });
     }
-    chatRoom.messages.set(messageId, paymentMessage);
-    await chatRoom.save();
+
+    // หา buyer และ seller จาก users ในห้องแชท
+    const usersMap = chatRoom.users;
+    let buyer = null;
+    let seller = null;
+
+    for (const [userId, userData] of usersMap) {
+      if (userData.role === 'buyer') {
+        buyer = { userId, name: userData.name };
+      } else if (userData.role === 'seller') {
+        seller = { userId, name: userData.name };
+      }
+    }
+
+    if (!buyer || !seller) {
+      return res.status(400).json({
+        success: false,
+        message: 'ไม่พบข้อมูล buyer หรือ seller ในห้องแชท'
+      });
+    }
+
+    // แปลงราคาจาก string เป็น number
+    const priceValue = parseFloat(quotationMessage.quotation.price);
+    if (isNaN(priceValue)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ราคาในใบเสนอราคาไม่ถูกต้อง'
+      });
+    }
+
+    // สร้างรายการชำระเงิน
+    const payment = await Payment.create({
+      chatRoom: chatRoomId,
+      quotationMessageId: quotationMessageId,
+      buyer: buyer,
+      seller: seller,
+      productInfo: {
+        productName: quotationMessage.quotation.productName,
+        details: quotationMessage.quotation.details,
+        images: quotationMessage.quotation.images
+      },
+      price: priceValue,
+      paymentStatus: 'pending',
+      statusHistory: [{
+        status: 'pending',
+        updatedAt: new Date(),
+        note: 'สร้างรายการชำระเงินจากใบเสนอราคา'
+      }]
+    });
 
     res.status(201).json({
       success: true,
-      message: 'สร้างใบเสนอราคาสำเร็จ',
-      data: {
-        payment,
-        messageId,
-        RoomID: roomId
-      }
+      message: 'สร้างรายการชำระเงินสำเร็จ',
+      payment: payment
     });
+
   } catch (error) {
-    next(error);
+    console.error('Error creating payment from quotation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการสร้างรายการชำระเงิน',
+      error: error.message
+    });
   }
 });
 
-// @route   GET /api/payment/rooms/:roomId
-// @desc    ดึงข้อมูล payment ทั้งหมดในห้อง
+// @desc    ดึงข้อมูลรายการชำระเงินจาก chatRoom
+// @route   GET /api/payment/room/:roomId
 // @access  Private
-router.get('/rooms/:roomId', protect, async (req, res, next) => {
+router.get('/room/:roomId', protect, async (req, res) => {
   try {
     const { roomId } = req.params;
 
-    // ตรวจสอบว่า room มีอยู่จริง
-    const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
-    if (!chatRoom) {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบห้องแชท'
-      });
-    }
+    const payments = await Payment.find({ chatRoom: roomId }).sort({ createdAt: -1 });
 
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชท
-    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์เข้าถึงห้องแชทนี้'
-      });
-    }
-
-    // ดึง payments ทั้งหมดในห้อง
-    const payments = await Payment.find({ RoomID: roomId })
-      .sort({ timestamp: -1 }); // เรียงจากใหม่ไปเก่า
-
-    res.status(200).json({
+    res.json({
       success: true,
-      data: {
-        payments,
-        count: payments.length
-      }
+      count: payments.length,
+      payments: payments
     });
+
   } catch (error) {
-    next(error);
+    console.error('Error fetching payments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
+      error: error.message
+    });
   }
 });
 
-// @route   GET /api/payment/:paymentId
-// @desc    ดึงข้อมูล payment เดียว
+// @desc    ดึงข้อมูลรายการชำระเงินจาก payment ID
+// @route   GET /api/payment/:id
 // @access  Private
-router.get('/:paymentId', protect, async (req, res, next) => {
+router.get('/:id', protect, async (req, res) => {
   try {
-    const { paymentId } = req.params;
+    const payment = await Payment.findById(req.params.id);
 
-    const payment = await Payment.findById(paymentId);
     if (!payment) {
       return res.status(404).json({
         success: false,
-        message: 'ไม่พบข้อมูล payment'
+        message: 'ไม่พบรายการชำระเงิน'
       });
     }
 
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชท
-    const chatRoom = await ChatRoom.findOne({ RoomID: payment.RoomID });
-    if (!chatRoom || !chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้'
-      });
-    }
-
-    res.status(200).json({
+    res.json({
       success: true,
-      data: { payment }
+      payment: payment
     });
+
   } catch (error) {
-    next(error);
+    console.error('Error fetching payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
+      error: error.message
+    });
   }
 });
 
-// @route   PUT /api/payment/rooms/:roomId/quotation/:messageId
-// @desc    อัพเดทสถานะใบเสนอราคา (ชำระเงิน/ปฏิเสธ)
+// @desc    ดึงข้อมูลรายการชำระเงินของผู้ใช้ (ทั้ง buyer และ seller)
+// @route   GET /api/payment/my-payments
 // @access  Private
-router.put('/rooms/:roomId/quotation/:messageId', protect, async (req, res, next) => {
+router.get('/my-payments', protect, async (req, res) => {
+  try {
+    const userId = req.user._id.toString();
+
+    const payments = await Payment.find({
+      $or: [
+        { 'buyer.userId': userId },
+        { 'seller.userId': userId }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: payments.length,
+      payments: payments
+    });
+
+  } catch (error) {
+    console.error('Error fetching user payments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
+      error: error.message
+    });
+  }
+});
+
+// @desc    ดึงข้อมูลรายละเอียดใบเสนอราคาจาก chatRoom และ messageId
+// @route   GET /api/payment/quotation/:roomId/:messageId
+// @access  Private
+router.get('/quotation/:roomId/:messageId', protect, async (req, res) => {
   try {
     const { roomId, messageId } = req.params;
-    const { status } = req.body; // true = ชำระเงินแล้ว, false = ปฏิเสธ
-
-    if (typeof status !== 'boolean') {
-      return res.status(400).json({
-        success: false,
-        message: 'กรุณาระบุสถานะ (status: true/false)'
-      });
-    }
 
     // ดึงข้อมูลห้องแชท
     const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
@@ -190,99 +223,60 @@ router.put('/rooms/:roomId/quotation/:messageId', protect, async (req, res, next
       });
     }
 
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชท
-    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์แก้ไขข้อมูลนี้'
-      });
-    }
-
-    // หาข้อความที่เป็น quotation
-    const message = chatRoom.messages.get(messageId);
-    if (!message || message.type !== 'quotation') {
+    // ดึงข้อความใบเสนอราคา
+    const quotationMessage = chatRoom.messages.get(messageId);
+    if (!quotationMessage || quotationMessage.type !== 'quotation') {
       return res.status(404).json({
         success: false,
         message: 'ไม่พบใบเสนอราคา'
       });
     }
 
-    // อัพเดทสถานะใน ChatRoom messages
-    message.quotation.status = status;
-    chatRoom.messages.set(messageId, message);
-    await chatRoom.save();
+    // หา buyer และ seller จาก users ในห้องแชท
+    const usersMap = chatRoom.users;
+    let buyer = null;
+    let seller = null;
 
-    // อัพเดทสถานะใน Payment collection (ถ้ามี)
-    const payment = await Payment.findOne({
-      RoomID: roomId,
-      sender_id: message.sender_id,
-      timestamp: message.timestamp
-    });
-
-    if (payment) {
-      payment.quotation.status = status;
-      await payment.save();
+    for (const [userId, userData] of usersMap) {
+      if (userData.role === 'buyer') {
+        buyer = { userId, name: userData.name };
+      } else if (userData.role === 'seller') {
+        seller = { userId, name: userData.name };
+      }
     }
 
-    // สร้างข้อความระบบแจ้งเตือน
-    const systemMessageId = generateMessageID();
-    const systemMessage = {
-      id: systemMessageId,
-      type: 'system',
-      text: status
-        ? 'ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ'
-        : 'ผู้ซื้อปฏิเสธใบเสนอราคา',
-      timestamp: Math.floor(Date.now() / 1000)
-    };
+    // ตรวจสอบว่ามี payment อยู่แล้วหรือไม่
+    const existingPayment = await Payment.findOne({
+      chatRoom: roomId,
+      quotationMessageId: messageId
+    });
 
-    chatRoom.messages.set(systemMessageId, systemMessage);
-    await chatRoom.save();
-
-    res.status(200).json({
+    res.json({
       success: true,
-      message: status ? 'ยืนยันการชำระเงินสำเร็จ' : 'ปฏิเสธใบเสนอราคาสำเร็จ',
-      data: {
-        message,
-        systemMessage,
-        payment
+      quotation: {
+        messageId: messageId,
+        chatRoom: roomId,
+        roomName: chatRoom.roomName,
+        productName: quotationMessage.quotation?.productName,
+        details: quotationMessage.quotation?.details,
+        images: quotationMessage.quotation?.images,
+        price: quotationMessage.quotation?.price,
+        status: quotationMessage.quotation?.status,
+        timestamp: quotationMessage.timestamp,
+        buyer: buyer,
+        seller: seller,
+        hasPayment: !!existingPayment,
+        paymentId: existingPayment?._id
       }
     });
+
   } catch (error) {
-    next(error);
-  }
-});
-
-// @route   DELETE /api/payment/:paymentId
-// @desc    ลบ payment record (admin only หรือ เจ้าของ)
-// @access  Private
-router.delete('/:paymentId', protect, async (req, res, next) => {
-  try {
-    const { paymentId } = req.params;
-
-    const payment = await Payment.findById(paymentId);
-    if (!payment) {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบข้อมูล payment'
-      });
-    }
-
-    // ตรวจสอบว่าผู้ใช้เป็นเจ้าของหรือไม่
-    if (payment.sender_id !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์ลบข้อมูลนี้'
-      });
-    }
-
-    await payment.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: 'ลบข้อมูล payment สำเร็จ'
+    console.error('Error fetching quotation:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูล',
+      error: error.message
     });
-  } catch (error) {
-    next(error);
   }
 });
 

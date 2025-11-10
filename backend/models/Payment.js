@@ -1,58 +1,116 @@
 const mongoose = require('mongoose');
 
-const QuotationSchema = new mongoose.Schema({
-  productName: {
-    type: String,
-    required: [true, 'กรุณาระบุชื่อสินค้า']
+const paymentSchema = new mongoose.Schema({
+  // ห้องแชทที่เกี่ยวข้อง
+  chatRoom: {
+    type: String,  // RoomID from ChatRoom
+    required: [true, 'กรุณาระบุห้องแชท']
   },
-  details: {
-    type: String,
-    required: [true, 'กรุณาระบุรายละเอียดสินค้า']
-  },
-  images: {
-    type: String, // CSV format หรือ array of URLs
-    default: ''
-  },
-  price: {
-    type: String, // เก็บเป็น String เหมือน frontend
-    required: [true, 'กรุณาระบุราคา']
-  },
-  status: {
-    type: Boolean,
-    default: false // false = รอการชำระเงิน, true = ชำระเงินแล้ว
-  }
-}, { _id: false });
 
-const PaymentSchema = new mongoose.Schema({
-  RoomID: {
+  // ข้อความใบเสนอราคาที่เกี่ยวข้อง
+  quotationMessageId: {
     type: String,
-    required: [true, 'กรุณาระบุ RoomID'],
-    ref: 'ChatRoom'
+    required: [true, 'กรุณาระบุ message ID ของใบเสนอราคา']
   },
-  sender_id: {
-    type: String,
-    required: [true, 'กรุณาระบุผู้ส่ง']
+
+  // ผู้ซื้อ
+  buyer: {
+    userId: {
+      type: String,
+      required: [true, 'กรุณาระบุผู้ซื้อ']
+    },
+    name: String
   },
-  type: {
-    type: String,
-    enum: ['quotation', 'payment_slip'],
-    required: [true, 'กรุณาระบุประเภท payment']
+
+  // ผู้ขาย
+  seller: {
+    userId: {
+      type: String,
+      required: [true, 'กรุณาระบุผู้ขาย']
+    },
+    name: String
   },
-  quotation: {
-    type: QuotationSchema,
-    required: function() {
-      return this.type === 'quotation';
-    }
+
+  // ข้อมูลสินค้าจากใบเสนอราคา
+  productInfo: {
+    productName: {
+      type: String,
+      required: [true, 'กรุณาระบุชื่อสินค้า']
+    },
+    details: String,
+    images: String  // CSV format: "url1,url2,url3"
   },
-  timestamp: {
+
+  // ราคาจากใบเสนอราคา
+  price: {
     type: Number,
-    default: () => Math.floor(Date.now() / 1000)
+    required: [true, 'กรุณาระบุราคา'],
+    min: [0, 'ราคาต้องมากกว่า 0']
+  },
+
+  // สถานะการชำระเงิน
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'paid', 'confirmed', 'cancelled', 'refunded'],
+    default: 'pending'
+  },
+
+  // สลิปการโอนเงิน (เพิ่มทีหลังเมื่อลูกค้าอัพโหลด)
+  paymentSlip: {
+    url: String,
+    fileName: String,
+    uploadedAt: Date
+  },
+
+  // ข้อมูลการชำระเงิน
+  paymentInfo: {
+    paymentMethod: {
+      type: String,
+      enum: ['bank_transfer', 'promptpay', 'credit_card', 'cash', 'other'],
+      default: 'bank_transfer'
+    },
+    bankName: String,
+    accountNumber: String,
+    transferDate: Date,
+    referenceNumber: String
+  },
+
+  // วันที่ชำระเงิน
+  paidAt: Date,
+
+  // วันที่ยืนยันการชำระเงิน
+  confirmedAt: Date,
+
+  // หมายเหตุ
+  notes: String,
+
+  // ประวัติการเปลี่ยนสถานะ
+  statusHistory: [{
+    status: String,
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    },
+    note: String
+  }],
+
+  createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
 });
 
-// Index สำหรับค้นหา payment ด้วย RoomID
-PaymentSchema.index({ RoomID: 1, timestamp: -1 });
+// Index สำหรับค้นหา
+paymentSchema.index({ chatRoom: 1 });
+paymentSchema.index({ 'buyer.userId': 1 });
+paymentSchema.index({ 'seller.userId': 1 });
+paymentSchema.index({ paymentStatus: 1, createdAt: -1 });
+paymentSchema.index({ quotationMessageId: 1 });
 
-module.exports = mongoose.model('Payment', PaymentSchema);
+module.exports = mongoose.model('Payment', paymentSchema);

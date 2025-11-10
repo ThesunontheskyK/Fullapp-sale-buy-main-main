@@ -52,11 +52,11 @@ app.get('/', (req, res) => {
         updateQuotation: 'PUT /api/chat/rooms/:roomId/quotation/:messageId (Protected) - อัพเดทใบเสนอราคา'
       },
       payment: {
-        createQuotation: 'POST /api/payment/rooms/:roomId/quotation (Protected) - สร้างใบเสนอราคา',
-        getPayments: 'GET /api/payment/rooms/:roomId (Protected) - ดึงข้อมูล payment ทั้งหมดในห้อง',
-        getPayment: 'GET /api/payment/:paymentId (Protected) - ดึงข้อมูล payment เดียว',
-        updateQuotation: 'PUT /api/payment/rooms/:roomId/quotation/:messageId (Protected) - อัพเดทสถานะใบเสนอราคา',
-        deletePayment: 'DELETE /api/payment/:paymentId (Protected) - ลบ payment record'
+        createFromQuotation: 'POST /api/payment/create-from-quotation (Protected) - สร้างรายการชำระเงินจากใบเสนอราคา',
+        getPaymentsByRoom: 'GET /api/payment/room/:roomId (Protected) - ดึงข้อมูลรายการชำระเงินของห้อง',
+        getPaymentById: 'GET /api/payment/:id (Protected) - ดึงข้อมูลรายการชำระเงินจาก ID',
+        getMyPayments: 'GET /api/payment/my-payments (Protected) - ดึงข้อมูลรายการชำระเงินของผู้ใช้',
+        getQuotationDetails: 'GET /api/payment/quotation/:roomId/:messageId (Protected) - ดึงข้อมูลรายละเอียดใบเสนอราคา'
       },
       socketIO: {
         events: 'Socket.io real-time events available',
