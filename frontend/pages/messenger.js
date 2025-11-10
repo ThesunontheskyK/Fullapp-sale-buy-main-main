@@ -4,7 +4,8 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  StatusBar
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -68,7 +69,7 @@ export default function MessagesPage({ navigation, route }) {
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
-      
+      <StatusBar barStyle="light-content" backgroundColor="transparent"  />
       {/* Header */}
       <View className="shadow-sm">
         <View className="flex-row items-center px-4 py-6 justify-between">
@@ -94,9 +95,9 @@ export default function MessagesPage({ navigation, route }) {
         >
           {rooms.length > 0 ? (
             rooms.map((room, index) => {
-              // นับจำนวนข้อความในห้อง
+
               const messageCount = Object.keys(room.messages || {}).length;
-              // นับจำนวนสมาชิกในห้อง
+
               const userCount = Object.keys(room.users || {}).length;
 
               return (
@@ -105,24 +106,24 @@ export default function MessagesPage({ navigation, route }) {
                   onPress={() => handleRoomPress(room)}
                   className="px-4 py-3 flex flex-row items-center gap-6 rounded-lg border-b border-black/10 active:bg-gray-50"
                 >
-                  <View className="w-[60px] h-[60px] bg-blue-400 rounded-full flex justify-center items-center">
+                  <View className="w-[60px] h-[60px] bg-blue-400 border border-black/30 rounded-full flex justify-center items-center">
                     <Text className="text-white font-bold text-xl">
-                      {(room.roomName || 'ห้อง')[0]}
+                      {(room.roomName || 'ห้อง')[0] + (room.roomName || 'ห้อง')[1]}
                     </Text>
                   </View>
                   <View className="flex gap-1 flex-1">
                     <Text className="text-gray-700 font-semibold">
                       {room.roomName || ''}
                     </Text>
-                    <Text className="text-gray-500 text-sm">
+                    <Text className="text-gray-500 text-sm font-semibold">
                       รหัสห้อง: {room.RoomID}
                     </Text>
-                    <Text className="text-gray-400 text-xs">
+                    <Text className="text-gray-400 text-xs font-semibold">
                       {messageCount} ข้อความ • {userCount} คน
                     </Text>
                   </View>
                   <View className="absolute top-2 right-2">
-                    <Text className="text-xs text-black/50">
+                    <Text className="text-xs text-black/50 ">
                       {new Date(room.updatedAt).toLocaleDateString('th-TH', {
                         month: 'short',
                         day: 'numeric'
