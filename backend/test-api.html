@@ -323,6 +323,7 @@
                 <button class="tab" onclick="switchTab('profile')">Profile</button>
                 <button class="tab" onclick="switchTab('chatrooms')">Chat Rooms</button>
                 <button class="tab" onclick="switchTab('messages')">Messages</button>
+                <button class="tab" onclick="switchTab('payment')">Payment</button>
                 <button class="tab" onclick="switchTab('transactions')">Transactions</button>
             </div>
 
@@ -633,6 +634,80 @@
                         <div class="result" id="quotStatusResult" style="display: none;">
                             <h4>ผลลัพธ์:</h4>
                             <pre id="quotStatusResultData"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Tab -->
+            <div class="tab-content" id="payment">
+                <div class="grid">
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงข้อมูลใบเสนอราคา</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="payQuotRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Message ID:</label>
+                            <input type="text" id="payQuotMsgId" placeholder="Message ID">
+                        </div>
+                        <button class="btn" onclick="getQuotationDetails()">ดึงข้อมูลใบเสนอราคา</button>
+                        <div class="result" id="getQuotResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getQuotResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge post">POST</span> สร้างรายการชำระเงินจากใบเสนอราคา</h3>
+                        <div class="form-group">
+                            <label>Chat Room ID:</label>
+                            <input type="text" id="payCreateRoomId" placeholder="Room ID">
+                        </div>
+                        <div class="form-group">
+                            <label>Quotation Message ID:</label>
+                            <input type="text" id="payCreateMsgId" placeholder="Message ID">
+                        </div>
+                        <button class="btn" onclick="createPaymentFromQuotation()">สร้างรายการชำระเงิน</button>
+                        <div class="result" id="createPayResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="createPayResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงข้อมูลรายการชำระเงิน (By ID)</h3>
+                        <div class="form-group">
+                            <label>Payment ID:</label>
+                            <input type="text" id="getPayId" placeholder="Payment ID">
+                        </div>
+                        <button class="btn" onclick="getPaymentById()">ดึงข้อมูล</button>
+                        <div class="result" id="getPayResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getPayResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงรายการชำระเงินของห้อง</h3>
+                        <div class="form-group">
+                            <label>Room ID:</label>
+                            <input type="text" id="getRoomPayId" placeholder="Room ID">
+                        </div>
+                        <button class="btn" onclick="getPaymentsByRoom()">ดึงรายการ</button>
+                        <div class="result" id="getRoomPayResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getRoomPayResultData"></pre>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3><span class="badge get">GET</span> ดึงรายการชำระเงินของฉัน</h3>
+                        <button class="btn" onclick="getMyPayments()">ดึงรายการของฉัน</button>
+                        <div class="result" id="getMyPayResult" style="display: none;">
+                            <h4>ผลลัพธ์:</h4>
+                            <pre id="getMyPayResultData"></pre>
                         </div>
                     </div>
                 </div>
@@ -1070,6 +1145,43 @@
             const roomId = document.getElementById('getRoomTxnId').value;
             const result = await apiCall(`/api/chat/rooms/${roomId}/transactions`, 'GET');
             showResult('getRoomTxnResult', result);
+        }
+
+        // Payment Functions
+        async function getQuotationDetails() {
+            const roomId = document.getElementById('payQuotRoomId').value;
+            const messageId = document.getElementById('payQuotMsgId').value;
+            const result = await apiCall(`/api/payment/quotation/${roomId}/${messageId}`, 'GET');
+            showResult('getQuotResult', result);
+        }
+
+        async function createPaymentFromQuotation() {
+            const chatRoomId = document.getElementById('payCreateRoomId').value;
+            const quotationMessageId = document.getElementById('payCreateMsgId').value;
+
+            const result = await apiCall('/api/payment/create-from-quotation', 'POST', {
+                chatRoomId,
+                quotationMessageId
+            });
+
+            showResult('createPayResult', result);
+        }
+
+        async function getPaymentById() {
+            const paymentId = document.getElementById('getPayId').value;
+            const result = await apiCall(`/api/payment/${paymentId}`, 'GET');
+            showResult('getPayResult', result);
+        }
+
+        async function getPaymentsByRoom() {
+            const roomId = document.getElementById('getRoomPayId').value;
+            const result = await apiCall(`/api/payment/room/${roomId}`, 'GET');
+            showResult('getRoomPayResult', result);
+        }
+
+        async function getMyPayments() {
+            const result = await apiCall('/api/payment/my-payments', 'GET');
+            showResult('getMyPayResult', result);
         }
     </script>
 </body>
