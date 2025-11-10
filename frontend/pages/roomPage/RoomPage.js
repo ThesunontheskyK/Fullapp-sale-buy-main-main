@@ -59,92 +59,7 @@ export default function RoomPage({ navigation, route }) {
   const [trackingModalVisible, setTrackingModalVisible] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
 
-<<<<<<< HEAD
-  // โหลดข้อมูลห้องจาก API และกำหนด Role
-  useEffect(() => {
-    const fetchRoomData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/chat/rooms/${roomId}`);
-
-        if (response.data.success) {
-          const roomData = response.data.data.chatRoom;
-          setRoom(roomData);
-
-          const messagesArray = Object.entries(roomData.messages || {}).map(
-            ([id, msg]) => ({
-              id,
-              ...msg,
-            })
-          );
-
-          setMessages(messagesArray);
-
-          setCurrentUserId(userId);
-
-          const fetchedRole = roomData.users?.[userId]?.role;
-          setCurrentUserRole(fetchedRole);
-
-        }
-      } catch (error) {
-        console.error("Error fetching room:", error);
-        alert("ไม่สามารถโหลดข้อมูลห้องได้");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (roomId) {
-      fetchRoomData();
-    }
-  }, [roomId, userId]); // เพิ่ม userId และ role ใน dependency
-
-  // เชื่อมต่อ Socket.io (โค้ดเดิม)
-  useEffect(() => {
-    socketService.connect();
-
-    if (roomId) {
-      socketService.joinRoom(roomId);
-
-      // รับข้อความใหม่
-      socketService.onReceiveMessage((message) => {
-        setMessages((prevMessages) => {
-          const exists = prevMessages.some((msg) => msg.id === message.id);
-          if (exists) {
-            return prevMessages;
-          }
-          return [...prevMessages, message];
-        });
-
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-      });
-
-      // รับ event ลบข้อความ
-      socketService.onMessageDeleted((data) => {
-        const { messageId } = data;
-        setMessages((prevMessages) =>
-          prevMessages.filter((msg) => msg.id !== messageId)
-        );
-      });
-    }
-
-    return () => {
-      if (roomId) {
-        socketService.leaveRoom(roomId);
-      }
-      socketService.offReceiveMessage();
-      socketService.offMessageDeleted();
-    };
-  }, [roomId]);
-  // ----------------------------------------------------
-  // โค้ดที่เหลือยังคงเป็น Logic เดิม
-  // ----------------------------------------------------
-
-=======
   // 4. Callbacks
->>>>>>> 0acb81e43ca3231b9b062eeed66e85b80abddc2d
   const handleTextChange = useCallback((text) => setInputText(text), []);
 
   const handleSendMessage = () => {
@@ -175,34 +90,6 @@ export default function RoomPage({ navigation, route }) {
     await Clipboard.setStringAsync(roomId);
   };
 
-<<<<<<< HEAD
-  const handleDeleteMessage = async (messageId) => {
-    try {
-      const response = await api.delete(`/chat/rooms/${roomId}/messages/${messageId}`);
-
-      if (response.data.success) {
-        // ลบข้อความออกจาก state
-        setMessages((prevMessages) =>
-          prevMessages.filter((msg) => msg.id !== messageId)
-        );
-
-        // ส่ง socket event เพื่อแจ้งผู้ใช้คนอื่น
-        socketService.deleteMessage(roomId, messageId);
-      }
-    } catch (error) {
-      console.error("Error deleting message:", error);
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("ไม่สามารถลบข้อความได้");
-      }
-    }
-  };
-
-  // ----------------------------------------------------
-  // Render Logic
-  // ----------------------------------------------------
-=======
   // 5. คำนวณสถานะห้อง
   const {
     pendingQuotations,
@@ -210,7 +97,6 @@ export default function RoomPage({ navigation, route }) {
     showTrackingButton,
     showDeliveryButton,
   } = getRoomStatus(messages, currentUserId, currentUserRole);
->>>>>>> 0acb81e43ca3231b9b062eeed66e85b80abddc2d
 
   // 6. Loading & Error States
   if (loading) {
@@ -262,20 +148,11 @@ export default function RoomPage({ navigation, route }) {
         behavior={"padding"}
         keyboardVerticalOffset={height}
       >
-<<<<<<< HEAD
-          <MessageList
-            messages={messages}
-            currentUserId={currentUserId}
-            flatListRef={flatListRef}
-            onDeleteMessage={handleDeleteMessage}
-          />
-=======
         <MessageList
           messages={messages}
           currentUserId={currentUserId}
           onDeleteMessage={handleDeleteMsg}
         />
->>>>>>> 0acb81e43ca3231b9b062eeed66e85b80abddc2d
 
         {pendingQuotations.map((msg) => (
           <View
