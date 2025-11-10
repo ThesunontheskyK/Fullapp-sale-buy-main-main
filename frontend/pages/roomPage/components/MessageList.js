@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Text, View, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
 
-export default function MessageList({ messages, currentUserId, flatListRef, onDeleteMessage }) {
+export default function MessageList({ messages, currentUserId, flatListRef }) {
 
   const formatTime = (timestamp) =>
     new Date(timestamp * 1000).toLocaleTimeString("th-TH", {
@@ -72,11 +72,6 @@ export default function MessageList({ messages, currentUserId, flatListRef, onDe
             <View
               style={[styles.messageWrapper, messageAlignment]}
             >
-              <TouchableOpacity
-                onLongPress={handleLongPress}
-                delayLongPress={500}
-                activeOpacity={isSystemMsg || !isCurrentUser ? 1 : 0.7}
-              >
                 <View
                   style={messageBubbleStyle}
                 >
@@ -115,7 +110,7 @@ export default function MessageList({ messages, currentUserId, flatListRef, onDe
                   </Text>
                 )}
                 </View>
-              </TouchableOpacity>
+
               {!isSystemMsg && (
                 <Text
                   style={[styles.timestamp, isCurrentUser ? styles.textRight : styles.textLeft]}
