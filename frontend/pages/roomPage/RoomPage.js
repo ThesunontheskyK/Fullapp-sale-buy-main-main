@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect , useMemo } from "react";
 import {
   Text,
   View,
@@ -6,18 +6,20 @@ import {
   StatusBar,
   TouchableOpacity,
   ActivityIndicator,
-  Pressable
+  Pressable,
+  StyleSheet,
+  Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Components
 import MessageList from "././components/MessageList";
 import MessageInput from "././components/MessageInput";
 import QuotationModal from "././components/QuotationModal";
-import TrackingModal from "././components/TrackingModal";
 import DeliveryActions from "././components/DeliveryActions";
 
 // Custom Hooks
@@ -27,7 +29,7 @@ import { useSocket } from "./hooks/useSocket";
 // Handlers
 import { sendTextMessage, handleDeleteQuotation, } from "./handlers/messageHandlers";
 import {sendQuotation,handlePayQuotation,} from "./handlers/quotationHandlers";
-import {handleSendTrackingNumber,handleConfirmDelivery,} from "./handlers/deliveryHandlers";
+import {handleConfirmDelivery} from "./handlers/deliveryHandlers";
 
 // Helpers
 import { getRoomStatus } from "./helpers/roomHelpers";
@@ -35,6 +37,8 @@ import { getRoomStatus } from "./helpers/roomHelpers";
 export default function RoomPage({ navigation, route }) {
   // 1. รับค่าจาก route.params
   const { userId, Idroom, room_number, role } = route.params || {};
+
+  const insets = useSafeAreaInsets();
 
   const roomId = Idroom ? Idroom.toString() : room_number ? room_number.toString() : "";
 
@@ -56,9 +60,6 @@ export default function RoomPage({ navigation, route }) {
     price: "",
   });
 
-  const [trackingModalVisible, setTrackingModalVisible] = useState(false);
-  const [trackingNumber, setTrackingNumber] = useState("");
-
   // 4. Callbacks
   const handleTextChange = useCallback((text) => setInputText(text), []);
 
@@ -78,10 +79,6 @@ export default function RoomPage({ navigation, route }) {
     handlePayQuotation(quotationId, roomId, setMessages, navigation);
   };
 
-  const handleSendTracking = () => {
-    handleSendTrackingNumber(trackingNumber, setMessages, setTrackingNumber,setTrackingModalVisible);
-  };
-
   const handleConfirm = () => {
     handleConfirmDelivery(setMessages);
   };
@@ -90,15 +87,16 @@ export default function RoomPage({ navigation, route }) {
     await Clipboard.setStringAsync(roomId);
   };
 
-  // 5. คำนวณสถานะห้อง
-  const {
-    pendingQuotations,
-    hasSentQuotation,
-    showTrackingButton,
-    showDeliveryButton,
-  } = getRoomStatus(messages, currentUserId, currentUserRole);
+  useEffect(() => {
 
-  // 6. Loading & Error States
+  },[])
+
+  const { pendingQuotations, hasSentQuotation, showDeliveryButton, paidQuotations } = useMemo(
+    () => getRoomStatus(messages, currentUserId, currentUserRole),
+    [messages, currentUserId, currentUserRole]
+  );
+
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 justify-center items-center bg-gray-50">
@@ -117,10 +115,14 @@ export default function RoomPage({ navigation, route }) {
   }
 
   // 7. Return UI
-  return (
+  return ( 
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#125c91" />
+      <StatusBar barStyle="light-content"  backgroundColor="#125c91" />
 
+      {Platform.OS === "ios" && (
+        <View style={{ height: insets.top, backgroundColor: "#125c91", position: "absolute", top: 0,left: 0,right: 0,zIndex: 10,}}/>
+      )}
+      
       {/* Header */}
       <View className="bg-[#125c91] shadow-sm relative z-50">
         <View className="flex-row items-center justify-between px-4 py-3">
@@ -168,7 +170,7 @@ export default function RoomPage({ navigation, route }) {
           </View>
         ))}
 
-        {showDeliveryButton && (
+        {showDeliveryButton && paidQuotations.length > 0  (
           <DeliveryActions
             onCancel={() => alert("ยกเลิกสินค้าเรียบร้อย")}
             onConfirm={handleConfirm}
@@ -185,17 +187,6 @@ export default function RoomPage({ navigation, route }) {
         />
       </KeyboardAvoidingView>
 
-      {showTrackingButton && (
-        <View className="absolute bottom-20 px-4 w-full">
-          <Pressable
-            className="bg-[#125c91] border border-black/50 py-3 px-4 rounded-lg shadow-lg items-center justify-center"
-            onPress={() => setTrackingModalVisible(true)}
-          >
-            <Text className="text-white font-semibold">กรอกเลขขนส่ง</Text>
-          </Pressable>
-        </View>
-      )}
-
       <QuotationModal
         visible={modalVisible}
         quotationData={quotationData}
@@ -210,14 +201,6 @@ export default function RoomPage({ navigation, route }) {
         }}
         onSend={handleSendQuotation}
         onUpdateData={setQuotationData}
-      />
-
-      <TrackingModal
-        visible={trackingModalVisible}
-        trackingNumber={trackingNumber}
-        onClose={() => setTrackingModalVisible(false)}
-        onSend={handleSendTracking}
-        onUpdateNumber={setTrackingNumber}
       />
     </SafeAreaView>
   );

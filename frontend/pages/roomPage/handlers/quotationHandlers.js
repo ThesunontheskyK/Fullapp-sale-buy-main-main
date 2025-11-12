@@ -58,13 +58,17 @@ export const handlePayQuotation = async (
     });
 
     if (response.status === 201 || response.status === 200) {
-      console.log("Success create payment");
 
       navigation.navigate("PaymentPage", {
         roomId: roomId,
         paymentId: response.data.payment?._id,
       });
+    }
 
+  } catch (error) {
+    console.log("Payment error:", error);
+  }
+};
       // setMessages((prev) =>
       //   prev.map((msg) =>
       //     msg.id === quotationId
@@ -72,9 +76,3 @@ export const handlePayQuotation = async (
       //       : msg
       //   )
       // );
-    }
-
-  } catch (error) {
-    console.log("Payment error:", error);
-  }
-};
