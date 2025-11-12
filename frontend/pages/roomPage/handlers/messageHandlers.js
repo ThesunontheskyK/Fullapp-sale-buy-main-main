@@ -2,6 +2,7 @@ import api from "../../../config/api";
 import socketService from "../../../services/socket";
 
 export const sendTextMessage = async (roomId, inputText, setInputText) => {
+
   if (inputText.trim() === "") return;
 
   try {
@@ -19,7 +20,6 @@ export const sendTextMessage = async (roomId, inputText, setInputText) => {
     }
   } catch (error) {
     console.error("Error sending message:", error);
-    alert("ไม่สามารถส่งข้อความได้");
   }
 };
 

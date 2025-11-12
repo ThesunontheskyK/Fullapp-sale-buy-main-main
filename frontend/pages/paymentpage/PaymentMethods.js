@@ -1,4 +1,11 @@
-import { Text, View, TextInput, TouchableOpacity , Pressable } from "react-native";
+import {
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Pressable,
+  StyleSheet
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function PaymentMethods({
@@ -10,18 +17,18 @@ export default function PaymentMethods({
   setQrcode,
 }) {
   return (
-    <View className="bg-white mx-4 mt-4 p-4 rounded-lg shadow-sm">
-      <Text className="text-lg font-bold text-gray-800 mb-4"> เลือกวิธีการชำระเงิน </Text>
+    <View style={styles.boxShadow}className="bg-white mx-4 mt-4 p-4 rounded-lg shadow-sm">
+      <Text className="text-lg font-bold text-gray-800 mb-4">
+        เลือกวิธีการชำระเงิน
+      </Text>
 
       <View
-        className={`flex-row items-center p-4 mb-3 rounded-lg border-2 bg-gray-200 ${
-          selectedPayment === "credit"
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-200"
+        className={`flex-row items-center p-4 mb-3 rounded-lg border-1 bg-gray-200 ${
+          selectedPayment === "credit" ? "border-[#125c91] bg-[#d5edff]" : "border-gray-200"
         }`}
       >
-        <View className="w-12 h-12 bg-yellow-100 rounded-full items-center justify-center mr-3">
-          <Ionicons name="wallet" size={24} color="#EAB308" />
+        <View className="w-12 h-12 bg-white border border-black/20 rounded-full items-center justify-center mr-3">
+          <Ionicons name="wallet" size={24} color="#125c91" />
         </View>
         <View className="flex-1">
           <Text className="font-semibold text-gray-800">ใช้เครดิต</Text>
@@ -31,11 +38,7 @@ export default function PaymentMethods({
         </View>
 
         <Ionicons
-          name={
-            selectedPayment === "credit"
-              ? "radio-button-on"
-              : "radio-button-off"
-          }
+          name={ selectedPayment === "credit" ? "radio-button-on" : "radio-button-off"}
           size={20}
           color={selectedPayment === "credit" ? "#3B82F6" : "#9CA3AF"}
         />
@@ -59,20 +62,20 @@ export default function PaymentMethods({
 
       {/* โอนเงิน - ปิดใช้งาน */}
       <View
-        className={`flex-row items-center  p-4 mb-3 rounded-lg border-2 bg-gray-200 ${
+        className={`flex-row items-center  p-4 mb-3 rounded-lg border-1 bg-gray-200 ${
           selectedPayment === "transfer"
             ? "border-blue-500 bg-blue-50"
             : "border-gray-200"
         }`}
       >
-        <View className="w-12 h-12 bg-green-100 rounded-full items-center justify-center mr-3">
-          <Ionicons name="card" size={24} color="#22C55E" />
+        <View className="w-12 h-12 bg-white border border-black/20 rounded-full items-center justify-center mr-3">
+          <Ionicons name="card" size={24} color="#125c91" />
         </View>
         <View className="flex-1">
           <Text className="font-semibold text-gray-800">โอนเงินผ่านธนาคาร</Text>
           <Text className="text-gray-600 text-sm">โอนเงินเข้าบัญชีบริษัท</Text>
         </View>
-        
+
         <Ionicons
           name={selectedPayment === "transfer" ? "radio-button-on" : "radio-button-off"}
           size={20}
@@ -82,23 +85,23 @@ export default function PaymentMethods({
 
       {/* พร้อมเพย์ - ใช้งานได้ */}
       <Pressable
-
-        onPress={() => { onPaymentSelect("promptpay"); setQrcode(true); }}
-
-        className={`flex-row items-center p-4 rounded-lg border-2 ${
-          selectedPayment === "promptpay"
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-200"
-        }`}
-      >
-        <View className="w-12 h-12 bg-purple-100 rounded-full items-center justify-center mr-3">
-          <Ionicons name="qr-code" size={24} color="#8B5CF6" />
+        onPress={() => {
+          onPaymentSelect("promptpay");
+          setQrcode(true);
+        }}
+        className={`flex-row items-center p-4 rounded-lg border ${
+          selectedPayment === "promptpay"? "border-[#125c91] bg-[#d5edff]" : "border-gray-200"}`}
+        >
+        <View className="w-12 h-12 bg-white border border-black/20 rounded-full items-center justify-center mr-3">
+          <Ionicons name="qr-code" size={24} color="#125c91" />
         </View>
         <View className="flex-1">
           <Text className="font-semibold text-gray-800">พร้อมเพย์</Text>
-          <Text className="text-gray-600 text-sm"> สแกน QR Code เพื่อชำระ </Text>
+          <Text className="text-gray-600 text-sm">
+            สแกน QR Code เพื่อชำระ
+          </Text>
         </View>
-        
+
         <Ionicons
           name={selectedPayment === "promptpay" ? "radio-button-on" : "radio-button-off"}
           size={20}
@@ -108,3 +111,12 @@ export default function PaymentMethods({
     </View>
   );
 }
+const styles = StyleSheet.create({
+  boxShadow: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+})

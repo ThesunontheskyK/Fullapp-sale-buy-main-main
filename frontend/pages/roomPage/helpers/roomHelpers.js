@@ -12,10 +12,6 @@ export const getRoomStatus = (messages, currentUserId, currentUserRole) => {
     (msg) => msg.type === "quotation" && msg.sender_id === currentUserId
   );
 
-  const hasTracking = messages.some(
-    (msg) =>
-      msg.type === "system" && msg.text?.startsWith("ผู้ขายได้กรอกเลขขนส่ง")
-  );
 
   const hasConfirmedDelivery = messages.some(
     (msg) =>
@@ -27,22 +23,16 @@ export const getRoomStatus = (messages, currentUserId, currentUserRole) => {
     (msg) => msg.type === "quotation" && msg.quotation.status === true
   );
 
-  const showTrackingButton =
-    currentUserRole === "seller" && paidQuotations.length > 0 && !hasTracking;
-
   const showDeliveryButton =
     pendingQuotations.length === 0 &&
-    hasTracking &&
     currentUserRole === "buyer" &&
     !hasConfirmedDelivery;
 
   return {
     pendingQuotations,
     hasSentQuotation,
-    hasTracking,
     hasConfirmedDelivery,
     paidQuotations,
-    showTrackingButton,
     showDeliveryButton,
   };
 };

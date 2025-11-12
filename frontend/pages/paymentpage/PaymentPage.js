@@ -4,6 +4,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Platform,
+  StatusBar
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
@@ -15,9 +17,10 @@ import ConfirmModal from './ConfirmModal';
 import { Fee } from "./Fee";
 import api from "../../config/api"
 import socket from "../../services/socket";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PaymentPage({ navigation, route }) {
-  const { roomId } = route.params || {};
+  const { roomId  } = route.params || {};
 
   const [selectedPayment, setSelectedPayment] = useState("");
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
@@ -28,6 +31,8 @@ export default function PaymentPage({ navigation, route }) {
   const [error, setError] = useState(null);
   const [PaymentData, setPaymentData]  = useState([]);
   const [fee , setFee] = useState(0);
+
+  const insets = useSafeAreaInsets();
 
 const fetchPaymentData = async (roomId) => {
   try {
@@ -74,7 +79,7 @@ const fetchPaymentData = async (roomId) => {
 
 
 
-    // setConfirmModalVisible(true);
+    setConfirmModalVisible(true);
 
       const PaymentMsg = {
 
@@ -87,7 +92,7 @@ const fetchPaymentData = async (roomId) => {
 
     socket.sendMessage(roomId, PaymentMsg);
 
-    navigation.goBack();
+    // navigation.goBack();
 
     
   };
@@ -131,9 +136,14 @@ const fetchPaymentData = async (roomId) => {
   const totalAmount = parseInt(PaymentData.price)  + fee;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-[#f5f5f5]" edges={["top", "bottom"]}>
+      <StatusBar barStyle="light-content"  backgroundColor="#125c91" />
+
+      {Platform.OS === "ios" && (
+        <View style={{ height: insets.top, backgroundColor: "#125c91", position: "absolute", top: 0,left: 0,right: 0,zIndex: 10,}}/>
+      )}
+
       <PaymentHeader navigation={navigation} />
-      {/* <Fee/> */}
 
       <ScrollView className="flex-1">
         <ProductDetails quotationData={quotationData} PaymentData={PaymentData} />
@@ -153,7 +163,7 @@ const fetchPaymentData = async (roomId) => {
 
       <View className="bg-white border-t border-gray-200 p-4">
         <TouchableOpacity onPress={handleFinalPayment}
-          className={`py-4 rounded-lg ${selectedPayment ? "bg-blue-500" : "bg-gray-300"}`}
+          className={`py-4 rounded-lg ${selectedPayment ? "bg-[#125c91]" : "bg-gray-300"}`}
         >
           <Text className={`text-center font-bold text-lg ${selectedPayment ? "text-white" : "text-gray-500"}`}>
             ยืนยันการชำระเงิน ฿{totalAmount}

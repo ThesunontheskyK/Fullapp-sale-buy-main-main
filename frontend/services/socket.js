@@ -1,19 +1,19 @@
-import { io } from 'socket.io-client';
-import { Platform } from 'react-native';
+import { io } from "socket.io-client";
+import { Platform } from "react-native";
 
 const getSocketUrl = () => {
-  const CUSTOM_IP = 'http://10.104.185.216:5000';
+  const CUSTOM_IP = "http://10.104.185.216:5000";
 
   if (CUSTOM_IP) {
     return CUSTOM_IP;
   }
 
-  if (Platform.OS === 'android') {
-    return 'http://10.104.185.216:5000';
-  } else if (Platform.OS === 'ios') {
-    return 'http://localhost:5000';
+  if (Platform.OS === "android") {
+    return "http://10.104.185.216:5000";
+  } else if (Platform.OS === "ios") {
+    return "http://localhost:5000";
   } else {
-    return 'http://localhost:5000';
+    return "http://localhost:5000";
   }
 };
 
@@ -25,32 +25,32 @@ class SocketService {
 
   connect() {
     if (this.socket && this.connected) {
-      console.log('Socket already connected');
+      console.log("Socket already connected");
       return this.socket;
     }
 
     const socketUrl = getSocketUrl();
-    console.log('Connecting to socket:', socketUrl);
+    console.log("Connecting to socket:", socketUrl);
 
     this.socket = io(socketUrl, {
-      transports: ['websocket'],
+      transports: ["websocket"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
 
-    this.socket.on('connect', () => {
-      console.log('Socket connected:', this.socket.id);
+    this.socket.on("connect", () => {
+      console.log("Socket connected:", this.socket.id);
       this.connected = true;
     });
 
-    this.socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    this.socket.on("disconnect", () => {
+      console.log("Socket disconnected");
       this.connected = false;
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+    this.socket.on("connect_error", (error) => {
+      console.error("Socket connection error:", error);
     });
 
     return this.socket;
@@ -61,71 +61,71 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
-      console.log('Socket disconnected manually');
+      console.log("Socket disconnected manually");
     }
   }
 
   joinRoom(roomId) {
     if (this.socket && this.connected) {
-      this.socket.emit('join-room', roomId);
-      console.log('Joined room:', roomId);
+      this.socket.emit("join-room", roomId);
+      console.log("Joined room:", roomId);
     }
   }
 
   leaveRoom(roomId) {
     if (this.socket && this.connected) {
-      this.socket.emit('leave-room', roomId);
-      console.log('Left room:', roomId);
+      this.socket.emit("leave-room", roomId);
+      console.log("Left room:", roomId);
     }
   }
 
   sendMessage(roomId, message) {
     if (this.socket && this.connected) {
-      this.socket.emit('send-message', { roomId, message });
-      console.log('Message sent to room:', roomId);
+      this.socket.emit("send-message", { roomId, message });
+      console.log("Message sent to room:", roomId);
     }
   }
 
   deleteMessage(roomId, messageId) {
     if (this.socket && this.connected) {
-      this.socket.emit('delete-message', { roomId, messageId });
-      console.log('Delete message request sent:', messageId);
+      this.socket.emit("delete-message", { roomId, messageId });
+      console.log("Delete message request sent:", messageId);
     }
   }
 
   onReceiveMessage(callback) {
     if (this.socket) {
-      this.socket.on('receive-message', callback);
+      this.socket.on("receive-message", callback);
     }
   }
 
   offReceiveMessage() {
     if (this.socket) {
-      this.socket.off('receive-message');
+      this.socket.off("receive-message");
     }
   }
 
   onMessageDeleted(callback) {
     if (this.socket) {
-      this.socket.on('message-deleted', callback);
+      this.socket.on("message-deleted", callback);
     }
   }
 
   offMessageDeleted() {
     if (this.socket) {
-      this.socket.off('message-deleted');
+      this.socket.off("message-deleted");
     }
   }
 
   onUserJoined(callback) {
     if (this.socket) {
-      this.socket.on('user-joined', callback);
+      this.socket.on("user-joined", callback);
     }
   }
 
   onUserLeft(callback) {
     if (this.socket) {
-      this.socket.on('user-left', callback);
+      this.socket.on("user-left", callback);
     }
   }
 
@@ -135,6 +135,29 @@ class SocketService {
 
   isConnected() {
     return this.connected;
+  }
+  onRoomUpdate(callback) {
+    if (this.socket) {
+      this.socket.on("room-updated", callback);
+    }
+  }
+
+  offRoomUpdate() {
+    if (this.socket) {
+      this.socket.off("room-updated");
+    }
+  }
+
+  onNewMessage(callback) {
+    if (this.socket) {
+      this.socket.on("new-message", callback);
+    }
+  }
+
+  offNewMessage() {
+    if (this.socket) {
+      this.socket.off("new-message");
+    }
   }
 }
 

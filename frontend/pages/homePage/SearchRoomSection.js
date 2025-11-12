@@ -24,11 +24,10 @@ export default function SearchRoomSection({
               setNotFound(false);
             }}
             placeholder="ค้นหาห้อง"
-            returnKeyType="search"
             className="font-semibold text-gray-800 h-full"
             placeholderTextColor="#9CA3AF"
             onSubmitEditing={handleInput}
-            keyboardType="decimal-pad"
+            keyboardType="default"
           />
         </View>
         <Pressable

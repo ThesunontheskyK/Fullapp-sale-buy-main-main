@@ -1,4 +1,4 @@
-import { Text, View , Pressable} from "react-native";
+import { Text, View , Pressable , StyleSheet} from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
@@ -12,7 +12,7 @@ export default function Nav() {
   };
 
   return (
-    <View className="h-[6.5vh] w-screen flex flex-row justify-around items-center bg-white rounded rounded-t-[30px]">
+    <View  className="h-[7vh] w-screen  flex flex-row justify-around border-t border-r border-l border-gray-300 items-center bg-white rounded rounded-t-[30px]">
 
       <Pressable onPress={() => handlePress("Home")} className="w-14 h-20 flex items-center justify-center">
         <AntDesign name="home" size={22} color={route.name === "Home" ? "#125c91" : "#6B6B6B"}/>

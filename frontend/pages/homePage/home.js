@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   KeyboardAvoidingView,
@@ -7,7 +7,7 @@ import {
   Platform,
   ScrollView,
   StatusBar,
-  StyleSheet
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Nav from "../nav";
@@ -22,7 +22,6 @@ import RoleSelectionModal from "./RoleSelectionModel";
 import RoomCodeModal from "./RoomCodeModal";
 
 export default function HomePage({ navigation, route }) {
-
   const { userId } = route.params || {};
 
   // --------------------------
@@ -40,6 +39,7 @@ export default function HomePage({ navigation, route }) {
   const [errorRoom, setErrorRoom] = useState("");
   const [errorRoomName, setErrorRoomName] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // --------------------------
   // Handlers
@@ -57,13 +57,11 @@ export default function HomePage({ navigation, route }) {
   };
 
   const joinRoomWithCode = async (roomCode) => {
-
     try {
       setIsLoading(true);
       const response = await api.post(`/chat/rooms/${roomCode}/join`);
 
       if (response.data.success === true) {
-        
         setNotFound(false);
         setErrorRoom("");
         setIdroom("");
@@ -71,14 +69,15 @@ export default function HomePage({ navigation, route }) {
         return navigation.navigate("Room", {
           Idroom: roomCode,
           role: response.data.data.role,
-          userId: userId
+          userId: userId,
         });
-
       }
     } catch (error) {
       console.error("Error joining room:", error);
       setNotFound(true);
-      setErrorRoom(error.response?.data?.message || "ไม่พบห้องนี้ กรุณาตรวจสอบรหัสอีกครั้ง");
+      setErrorRoom(
+        error.response?.data?.message || "ไม่พบห้องนี้ กรุณาตรวจสอบรหัสอีกครั้ง"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -101,9 +100,9 @@ export default function HomePage({ navigation, route }) {
       setIsLoading(true);
       const currentRole = selectedRole;
       // เรียก API สร้างห้องแชท
-      const response = await api.post('/chat/rooms', {
+      const response = await api.post("/chat/rooms", {
         role: currentRole,
-        roomName: businessName
+        roomName: businessName,
       });
 
       if (response.data.success) {
@@ -119,7 +118,11 @@ export default function HomePage({ navigation, route }) {
       }
     } catch (error) {
       console.error("Error creating room:", error);
-      Alert.alert("ข้อผิดพลาด", error.response?.data?.message || "ไม่สามารถสร้างห้องได้ กรุณาลองใหม่อีกครั้ง");
+      Alert.alert(
+        "ข้อผิดพลาด",
+        error.response?.data?.message ||
+          "ไม่สามารถสร้างห้องได้ กรุณาลองใหม่อีกครั้ง"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -135,22 +138,39 @@ export default function HomePage({ navigation, route }) {
     setRoomCodeModalVisible(false);
     navigation.navigate("Room", {
       Idroom: createdRoomCode,
-      role: createdRoomRole
+      role: createdRoomRole,
     });
   };
+
+  // keyboard nav
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   // --------------------------
   // Render
   // --------------------------
   return (
-    <SafeAreaView className="flex-1 bg-white " edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content" backgroundColor="#125c91" />
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View className="flex-1  overflow-hidden">
+    <SafeAreaView className="flex-1 bg-white " edges={["bottom"]}>
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
+
+      <KeyboardAvoidingView className="flex-1" behavior={"padding"}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View className="flex-1">
             <View
               className="flex-1"
               contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
@@ -171,10 +191,6 @@ export default function HomePage({ navigation, route }) {
               <ActionButtons handleCreate={handleCreate} />
 
               <PromotionSection />
-            </View>
-
-            <View className="absolute bottom-0 left-0 right-0">
-              <Nav navigation={navigation} />
             </View>
 
             <RoleSelectionModal
@@ -201,6 +217,11 @@ export default function HomePage({ navigation, route }) {
           </View>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+      {!keyboardVisible && (
+        <View className="absolute bottom-0 left-0 right-0">
+          <Nav navigation={navigation} />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
