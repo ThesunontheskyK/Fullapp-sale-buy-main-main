@@ -4,7 +4,6 @@ import {
   View,
   KeyboardAvoidingView,
   StatusBar,
-  TouchableOpacity,
   ActivityIndicator,
   Pressable,
   StyleSheet,
@@ -100,7 +99,7 @@ export default function RoomPage({ navigation, route }) {
   };
 
   const handlePay = (quotationId) => {
-    handlePayQuotation(quotationId, roomId, setMessages, navigation);
+    handlePayQuotation(quotationId, roomId, navigation);
   };
 
   const handleConfirm = () => {

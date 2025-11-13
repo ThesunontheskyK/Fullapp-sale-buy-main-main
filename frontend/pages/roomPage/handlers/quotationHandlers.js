@@ -50,6 +50,8 @@ export const handlePayQuotation = async (
   roomId,
   navigation
 ) => {
+
+  console.log(quotationId + "--" + roomId  )
   try {
     const response = await api.post("/payment/create-from-quotation", {
       chatRoomId: roomId,
