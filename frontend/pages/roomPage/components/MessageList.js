@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View, FlatList, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { Text, View, FlatList, StyleSheet } from "react-native";
 
 export default function MessageList({ messages, currentUserId, flatListRef }) {
 
@@ -46,27 +46,6 @@ export default function MessageList({ messages, currentUserId, flatListRef }) {
           const messageTextStyle = isCurrentUser 
             ? styles.currentUserText 
             : styles.otherUserText;
-
-
-          const handleLongPress = () => {
-            if (!isSystemMsg && isCurrentUser && onDeleteMessage) {
-              Alert.alert(
-                "ลบข้อความ",
-                "คุณต้องการลบข้อความนี้หรือไม่?",
-                [
-                  {
-                    text: "ยกเลิก",
-                    style: "cancel"
-                  },
-                  {
-                    text: "ลบ",
-                    style: "destructive",
-                    onPress: () => onDeleteMessage(item.id)
-                  }
-                ]
-              );
-            }
-          };
 
           return (
             <View
@@ -173,18 +152,16 @@ const styles = StyleSheet.create({
     fontSize: 15, // text-[15px]
     maxWidth: 180, // max-w-[180px]
   },
-
-  // --- Conditional Message Bubble Styles ---
-  // System Message (items-center)
+  
   systemBubble: {
-    backgroundColor: '#E5E7EB', // bg-gray-200
+    backgroundColor: '#FFDAB9', // bg-gray-200
     borderRadius: 6, // rounded-md
     maxWidth: '80%', // กำหนดให้ไม่กว้างเกินไป
     shadowOpacity: 0, // ลบเงาสำหรับข้อความระบบ
     elevation: 0,
   },
   systemText: {
-    color: '#6B7280', // text-gray-500
+    color: '#A0522D', // text-gray-500
     fontWeight: '600', // font-semibold
     fontSize: 14, // text-[14px]
   },

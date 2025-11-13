@@ -293,4 +293,36 @@ router.get("/quotation/:roomId/:messageId", protect, async (req, res) => {
   }
 });
 
+// @desc    อัพเดทสถานะการชำระเงิน
+// @route   PUT /api/payment/status/:paymentId
+// @access  Private
+
+router.put("/status/:paymentId" , protect , async (req ,res) => {
+   try {
+      const { paymentId } = req.params;
+      const { status } = req.body;
+
+      const payment = await Payment.findById(paymentId);
+      
+      if( !payment ) {
+        return res.status(404).json({
+          success: false,
+          message: "not found paymentId"
+        });
+      }
+      payment.paymentStatus = status;
+
+      if(status === 'confirmed') {
+        payment.updatedAt = new Date();
+      }
+      await payment.save();
+
+      res.status(200).json({success: true});
+
+   }catch(error) {
+    console.error("Error updating payment status:", error);
+   }
+})
+
+
 module.exports = router;

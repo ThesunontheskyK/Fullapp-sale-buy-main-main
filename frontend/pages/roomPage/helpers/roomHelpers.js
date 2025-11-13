@@ -1,5 +1,6 @@
 // ฟังก์ชันตรวจสอบสถานะต่างๆ ในห้อง
 export const getRoomStatus = (messages, currentUserId, currentUserRole) => {
+
   const pendingQuotations = messages.filter(
     (msg) =>
       msg.type === "quotation" &&
@@ -12,11 +13,19 @@ export const getRoomStatus = (messages, currentUserId, currentUserRole) => {
     (msg) => msg.type === "quotation" && msg.sender_id === currentUserId
   );
 
+  // ✅ เพิ่ม: เช็คว่ามี quotation ที่ชำระเงินแล้ว
+  const hasPaidQuotation = messages.some(
+    (msg) =>
+      msg.type === "quotation" &&
+      msg.quotation.status === true
+  );
+
   const hasConfirmedDelivery = messages.some(
     (msg) =>
       msg.type === "system" &&
       msg.text?.startsWith("ผู้ซื้อยืนยันการได้รับของแล้ว")
   );
+  
   const hasCanceledDelivery = messages.some(
     (msg) =>
       msg.type === "system" &&
@@ -25,14 +34,16 @@ export const getRoomStatus = (messages, currentUserId, currentUserRole) => {
 
   const showDeliveryButton =
     pendingQuotations.length === 0 &&
+    hasPaidQuotation && // ✅ เพิ่มเงื่อนไขนี้
     currentUserRole === "buyer" &&
     !hasConfirmedDelivery &&
-    !hasCanceledDelivery 
+    !hasCanceledDelivery;
 
   return {
     pendingQuotations,
     hasSentQuotation,
     hasConfirmedDelivery,
+    hasPaidQuotation, // ✅ return ออกมาด้วย
     showDeliveryButton,
   };
 };

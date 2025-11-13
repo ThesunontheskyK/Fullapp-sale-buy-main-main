@@ -96,7 +96,7 @@ export default function HomePage({ navigation, route }) {
     try {
       setIsLoading(true);
       const currentRole = selectedRole;
-      // เรียก API สร้างห้องแชท
+
       const response = await api.post("/chat/rooms", {
         role: currentRole,
         roomName: businessName,
@@ -139,7 +139,6 @@ export default function HomePage({ navigation, route }) {
     });
   };
 
-  // keyboard nav
   useEffect(() => {
     const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
       setKeyboardVisible(true);
@@ -213,12 +212,12 @@ export default function HomePage({ navigation, route }) {
             />
           </View>
         </TouchableWithoutFeedback>
+        {!keyboardVisible && (
+          <View className="absolute bottom-0 left-0 right-0">
+            <Nav navigation={navigation} />
+          </View>
+        )}
       </KeyboardAvoidingView>
-      {!keyboardVisible && (
-        <View className="absolute bottom-0 left-0 right-0">
-          <Nav navigation={navigation} />
-        </View>
-      )}
     </SafeAreaView>
   );
 }

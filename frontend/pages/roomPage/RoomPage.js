@@ -6,7 +6,6 @@ import {
   StatusBar,
   ActivityIndicator,
   Pressable,
-  StyleSheet,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
