@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect , useMemo } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Text,
   View,
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  Platform
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,9 +27,16 @@ import { useRoomData } from "./hooks/useRoomData";
 import { useSocket } from "./hooks/useSocket";
 
 // Handlers
-import { sendTextMessage, handleDeleteQuotation, } from "./handlers/messageHandlers";
-import {sendQuotation,handlePayQuotation,} from "./handlers/quotationHandlers";
-import {handleConfirmDelivery} from "./handlers/deliveryHandlers";
+import {
+  sendTextMessage,
+  handleDeleteQuotation,
+} from "./handlers/messageHandlers";
+import {
+  sendQuotation,
+  handlePayQuotation,
+} from "./handlers/quotationHandlers";
+import { handleConfirmDelivery } from "./handlers/deliveryHandlers";
+import { handleCancelDelivery } from "./handlers/deliveryHandlers";
 
 // Helpers
 import { getRoomStatus } from "./helpers/roomHelpers";
@@ -40,12 +47,23 @@ export default function RoomPage({ navigation, route }) {
 
   const insets = useSafeAreaInsets();
 
-  const roomId = Idroom ? Idroom.toString() : room_number ? room_number.toString() : "";
+  const roomId = Idroom
+    ? Idroom.toString()
+    : room_number
+      ? room_number.toString()
+      : "";
 
   const height = useHeaderHeight();
 
   // 2. ใช้ Custom Hooks
-  const { room, loading, currentUserId, currentUserRole, messages,setMessages,} = useRoomData(roomId, userId, role);
+  const {
+    room,
+    loading,
+    currentUserId,
+    currentUserRole,
+    messages,
+    setMessages,
+  } = useRoomData(roomId, userId, role);
 
   useSocket(roomId, setMessages);
 
@@ -72,7 +90,13 @@ export default function RoomPage({ navigation, route }) {
   };
 
   const handleSendQuotation = () => {
-    sendQuotation( roomId, quotationData, setMessages, setQuotationData, setModalVisible);
+    sendQuotation(
+      roomId,
+      quotationData,
+      setMessages,
+      setQuotationData,
+      setModalVisible
+    );
   };
 
   const handlePay = (quotationId) => {
@@ -83,19 +107,19 @@ export default function RoomPage({ navigation, route }) {
     handleConfirmDelivery(setMessages);
   };
 
+  const handleCancel = () => {
+    handleCancelDelivery(setMessages);
+  }
+
   const handleCopy = async () => {
     await Clipboard.setStringAsync(roomId);
   };
 
-  useEffect(() => {
-
-  },[])
-
-  const { pendingQuotations, hasSentQuotation, showDeliveryButton, paidQuotations } = useMemo(
-    () => getRoomStatus(messages, currentUserId, currentUserRole),
-    [messages, currentUserId, currentUserRole]
-  );
-
+  const {
+    pendingQuotations,
+    hasSentQuotation,
+    showDeliveryButton,
+  } = getRoomStatus(messages, currentUserId, currentUserRole);
 
   if (loading) {
     return (
@@ -115,14 +139,24 @@ export default function RoomPage({ navigation, route }) {
   }
 
   // 7. Return UI
-  return ( 
+  return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content"  backgroundColor="#125c91" />
+      <StatusBar barStyle="light-content" backgroundColor="#125c91" />
 
       {Platform.OS === "ios" && (
-        <View style={{ height: insets.top, backgroundColor: "#125c91", position: "absolute", top: 0,left: 0,right: 0,zIndex: 10,}}/>
+        <View
+          style={{
+            height: insets.top,
+            backgroundColor: "#125c91",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+          }}
+        />
       )}
-      
+
       {/* Header */}
       <View className="bg-[#125c91] shadow-sm relative z-50">
         <View className="flex-row items-center justify-between px-4 py-3">
@@ -165,14 +199,16 @@ export default function RoomPage({ navigation, route }) {
               className="w-full bg-[#125c91] py-3 rounded-lg items-center justify-center shadow"
               onPress={() => handlePay(msg.id)}
             >
-              <Text className="text-white font-semibold text-center"> ชำระเงิน</Text>
+              <Text className="text-white font-semibold text-center">
+                ชำระเงิน
+              </Text>
             </Pressable>
           </View>
         ))}
 
-        {showDeliveryButton && paidQuotations.length > 0  (
+        {showDeliveryButton && (
           <DeliveryActions
-            onCancel={() => alert("ยกเลิกสินค้าเรียบร้อย")}
+            onCancel={handleCancel}
             onConfirm={handleConfirm}
           />
         )}

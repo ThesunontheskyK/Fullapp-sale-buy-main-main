@@ -5,22 +5,23 @@ import {
   ScrollView,
   Alert,
   Platform,
-  StatusBar
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
-import PaymentHeader from './PaymentHeader';
-import ProductDetails from './ProductDetails';
-import PaymentMethods from './PaymentMethods';
-import PaymentSummary from './PaymentSummary';
-import ConfirmModal from './ConfirmModal';
+import PaymentHeader from "./PaymentHeader";
+import ProductDetails from "./ProductDetails";
+import PaymentMethods from "./PaymentMethods";
+import PaymentSummary from "./PaymentSummary";
+import ConfirmModal from "./ConfirmModal";
 import { Fee } from "./Fee";
-import api from "../../config/api"
+import api from "../../config/api";
 import socket from "../../services/socket";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function PaymentPage({ navigation, route }) {
-  const { roomId  } = route.params || {};
+  const { roomId } = route.params || {};
+  const { messages } = route.params || {};
 
   const [selectedPayment, setSelectedPayment] = useState("");
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
@@ -29,40 +30,37 @@ export default function PaymentPage({ navigation, route }) {
   const [quotationData, setQuotationData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [PaymentData, setPaymentData]  = useState([]);
-  const [fee , setFee] = useState(0);
+  const [PaymentData, setPaymentData] = useState([]);
+  const [fee, setFee] = useState(0);
 
   const insets = useSafeAreaInsets();
 
-const fetchPaymentData = async (roomId) => {
-  try {
-    setLoading(true);
-    setError(null);
+  const fetchPaymentData = async (roomId) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    const response = await api.get(`/payment/room/${roomId}`);
+      const response = await api.get(`/payment/room/${roomId}`);
 
-    if (response.data.success && response.data.payments.length > 0) {
+      if (response.data.success && response.data.payments.length > 0) {
+        const payment = response.data.payments[0];
 
-      const payment = response.data.payments[0];
-
-      setPaymentData(payment);
-      setQuotationData(payment.productInfo);
+        setPaymentData(payment);
+        setQuotationData(payment.productInfo);
+      }
+    } catch (error) {
+      console.error("Error fetching payment data:", error.message);
+      setError(error.message);
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    console.error("Error fetching payment data:", error.message);
-    setError(error.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   useEffect(() => {
     if (roomId) {
       fetchPaymentData(roomId);
     } else {
-      setError('ไม่มี roomId');
+      setError("ไม่มี roomId");
       setLoading(false);
     }
   }, [roomId]);
@@ -71,30 +69,36 @@ const fetchPaymentData = async (roomId) => {
     setSelectedPayment(method);
   };
 
-  const handleFinalPayment = () => {
+  const handleFinalPayment = async () => {
+    if (!selectedPayment) return;
 
-    if (!selectedPayment) return ;
-
-    if (!quotationData) return ;
-
-
+    if (!quotationData) return;
 
     setConfirmModalVisible(true);
 
-      const PaymentMsg = {
+    try {
+      const response = await api.put(
+        `/chat/rooms/${roomId}/quotation/${messages}`,
+        { status: true }
+      );
 
-        id: (Date.now() + 1).toString(),
-        type: "system",
-        text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
-        timestamp: Math.floor(Date.now() / 1000),
+      console.log("asdafsd")
 
-      };
+      if (response.status === 200) {
+        console.log("updata status payment success");
+      }
+    } catch (err) {
+      console.log("updata payment error : ", err);
+    }
+
+    const PaymentMsg = {
+      id: (Date.now() + 1).toString(),
+      type: "system",
+      text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
+      timestamp: Math.floor(Date.now() / 1000),
+    };
 
     socket.sendMessage(roomId, PaymentMsg);
-
-    // navigation.goBack();
-
-    
   };
 
   const handleConfirmPayment = async () => {
@@ -107,7 +111,6 @@ const fetchPaymentData = async (roomId) => {
       Fee(setFee, PaymentData.price);
     }
   }, [roomId, PaymentData?.price]);
-
 
   if (loading) {
     return (
@@ -122,8 +125,10 @@ const fetchPaymentData = async (roomId) => {
     return (
       <SafeAreaView className="flex-1 bg-gray-50 justify-center items-center">
         <Text className="text-red-600 mb-2">เกิดข้อผิดพลาด</Text>
-        <Text className="text-gray-500 text-sm mb-4">{error || 'ไม่พบข้อมูล'}</Text>
-        <TouchableOpacity 
+        <Text className="text-gray-500 text-sm mb-4">
+          {error || "ไม่พบข้อมูล"}
+        </Text>
+        <TouchableOpacity
           className="bg-blue-500 px-4 py-2 rounded-lg"
           onPress={() => roomId && fetchPaymentData(roomId)}
         >
@@ -133,21 +138,34 @@ const fetchPaymentData = async (roomId) => {
     );
   }
 
-  const totalAmount = parseInt(PaymentData.price)  + fee;
+  const totalAmount = parseInt(PaymentData.price) + fee;
 
   return (
     <SafeAreaView className="flex-1 bg-[#f5f5f5]" edges={["top", "bottom"]}>
-      <StatusBar barStyle="light-content"  backgroundColor="#125c91" />
+      <StatusBar barStyle="light-content" backgroundColor="#125c91" />
 
       {Platform.OS === "ios" && (
-        <View style={{ height: insets.top, backgroundColor: "#125c91", position: "absolute", top: 0,left: 0,right: 0,zIndex: 10,}}/>
+        <View
+          style={{
+            height: insets.top,
+            backgroundColor: "#125c91",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 10,
+          }}
+        />
       )}
 
       <PaymentHeader navigation={navigation} />
 
       <ScrollView className="flex-1">
-        <ProductDetails quotationData={quotationData} PaymentData={PaymentData} />
-        
+        <ProductDetails
+          quotationData={quotationData}
+          PaymentData={PaymentData}
+        />
+
         <PaymentMethods
           selectedPayment={selectedPayment}
           onPaymentSelect={handlePaymentSelect}
@@ -162,10 +180,13 @@ const fetchPaymentData = async (roomId) => {
       </ScrollView>
 
       <View className="bg-white border-t border-gray-200 p-4">
-        <TouchableOpacity onPress={handleFinalPayment}
+        <TouchableOpacity
+          onPress={handleFinalPayment}
           className={`py-4 rounded-lg ${selectedPayment ? "bg-[#125c91]" : "bg-gray-300"}`}
         >
-          <Text className={`text-center font-bold text-lg ${selectedPayment ? "text-white" : "text-gray-500"}`}>
+          <Text
+            className={`text-center font-bold text-lg ${selectedPayment ? "text-white" : "text-gray-500"}`}
+          >
             ยืนยันการชำระเงิน ฿{totalAmount}
           </Text>
         </TouchableOpacity>

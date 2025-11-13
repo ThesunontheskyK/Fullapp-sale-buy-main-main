@@ -12,11 +12,11 @@ export const useRoomData = (roomId, userId, role) => {
   useEffect(() => {
     if (!roomId) return;
 
-    // 1️⃣ Fetch ข้อมูลครั้งแรก
     const fetchRoomData = async () => {
       try {
         setLoading(true);
         const response = await api.get(`/chat/rooms/${roomId}`);
+        
         if (response.data.success) {
           const roomData = response.data.data.chatRoom;
           setRoom(roomData);
@@ -40,11 +40,9 @@ export const useRoomData = (roomId, userId, role) => {
 
     fetchRoomData();
 
-    // 2️⃣ เชื่อม socket
     socketService.connect();
     socketService.joinRoom(roomId);
 
-    // 3️⃣ Listener สำหรับ room update
     socketService.onRoomUpdate((updatedRoom) => {
       setRoom(updatedRoom);
       const messagesArray = Object.entries(updatedRoom.messages || {}).map(
@@ -53,12 +51,10 @@ export const useRoomData = (roomId, userId, role) => {
       setMessages(messagesArray);
     });
 
-    // 4️⃣ Listener สำหรับข้อความใหม่
     socketService.onNewMessage((newMsg) => {
       setMessages((prev) => [...prev, newMsg]);
     });
 
-    // 5️⃣ Cleanup
     return () => {
       socketService.leaveRoom(roomId);
       socketService.offRoomUpdate();

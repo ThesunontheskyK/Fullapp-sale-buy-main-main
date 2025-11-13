@@ -607,67 +607,42 @@ router.put('/rooms/:roomId/complete', protect, async (req, res, next) => {
 // @desc    ตอบรับ/ปฏิเสธใบเสนอราคา
 // @access  Private
 router.put('/rooms/:roomId/quotation/:messageId', protect, async (req, res, next) => {
-  try {
-    const { status } = req.body; // true = accept, false = reject
-    const { roomId, messageId } = req.params;
+    try {
+        const { roomId, messageId } = req.params;
+        const newStatus = true; // ตั้งค่าสถานะเป็น true ตามที่คุณต้องการ
 
-    // ดึงข้อมูลห้องแชท
-    const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
+        const updatePath = `messages.${messageId}.quotation.status`;
 
-    if (!chatRoom) {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบห้องแชท'
-      });
+        const result = await ChatRoom.updateOne(
+            { 
+                RoomID: roomId,
+
+                [`messages.${messageId}.type`]: 'quotation' 
+            },
+            {
+                $set: { 
+                    [updatePath]: newStatus 
+                }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'ไม่พบห้องแชท หรือ ใบเสนอราคาที่ต้องการ' });
+        }
+
+        if (result.modifiedCount === 0) {
+            return res.status(200).json({ success: true, message: 'สถานะถูกตั้งค่าเป็น true อยู่แล้ว' });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `สถานะ quotation ID ${messageId} ถูกอัปเดตเป็น true เรียบร้อยแล้ว`,
+            data: result
+        });
+
+    } catch (error) {
+        next(error);
     }
-
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชทหรือไม่
-    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์แก้ไขห้องแชทนี้'
-      });
-    }
-
-    // หาข้อความที่เป็น quotation
-    const message = chatRoom.messages.get(messageId);
-
-    if (!message || message.type !== 'quotation') {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบใบเสนอราคา'
-      });
-    }
-
-    // อัพเดทสถานะ quotation
-    message.quotation.status = status;
-    chatRoom.messages.set(messageId, message);
-    await chatRoom.save();
-
-    // สร้างข้อความระบบแจ้งเตือน
-    const systemMessageId = generateMessageID();
-    
-    const systemMessage = {
-      id: systemMessageId,
-      type: 'system',
-      text: status ? 'ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ' : 'ผู้ซื้อปฏิเสธใบเสนอราคา',
-      timestamp: Math.floor(Date.now() / 1000)
-    };
-
-    chatRoom.messages.set(systemMessageId, systemMessage);
-    await chatRoom.save();
-
-    res.status(200).json({
-      success: true,
-      message: status ? 'ยอมรับใบเสนอราคาสำเร็จ' : 'ปฏิเสธใบเสนอราคาสำเร็จ',
-      data: {
-        message,
-        systemMessage
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
 });
 
 // เก็บ Transaction endpoints เดิมไว้ (ยังใช้งานได้)

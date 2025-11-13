@@ -48,7 +48,6 @@ export const sendQuotation = async (
 export const handlePayQuotation = async (
   quotationId,
   roomId,
-  setMessages,
   navigation
 ) => {
   try {
@@ -61,6 +60,7 @@ export const handlePayQuotation = async (
 
       navigation.navigate("PaymentPage", {
         roomId: roomId,
+        messages: quotationId,
         paymentId: response.data.payment?._id,
       });
     }
@@ -69,10 +69,3 @@ export const handlePayQuotation = async (
     console.log("Payment error:", error);
   }
 };
-      // setMessages((prev) =>
-      //   prev.map((msg) =>
-      //     msg.id === quotationId
-      //       ? { ...msg, quotation: { ...msg.quotation, status: true } }
-      //       : msg
-      //   )
-      // );
