@@ -120,6 +120,17 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('user-left', { socketId: socket.id });
   });
 
+
+  // เช็คการชำระเงิน
+  socket.on('check-payment', (data) => {
+
+    const { roomId } = data;
+    
+    io.to(roomId).emit('payment-status', {
+      status: true
+    });
+  });
+
   // Disconnect
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);

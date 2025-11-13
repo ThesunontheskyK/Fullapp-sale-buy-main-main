@@ -67,7 +67,7 @@ const paymentSchema = new mongoose.Schema({
     paymentMethod: {
       type: String,
       enum: ['bank_transfer', 'promptpay', 'credit_card', 'cash', 'other'],
-      default: 'bank_transfer'
+      default: 'promptpay'
     },
     bankName: String,
     accountNumber: String,

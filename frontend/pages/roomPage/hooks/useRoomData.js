@@ -55,6 +55,13 @@ export const useRoomData = (roomId, userId, role) => {
       setMessages((prev) => [...prev, newMsg]);
     });
 
+    socketService.onPaymentStatus((data) => {
+      
+      if (data.status === true) {
+        fetchRoomData();
+      }
+    });
+
     return () => {
       socketService.leaveRoom(roomId);
       socketService.offRoomUpdate();

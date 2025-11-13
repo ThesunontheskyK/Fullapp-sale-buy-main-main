@@ -61,35 +61,30 @@ class SocketService {
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
-      console.log("Socket disconnected manually");
     }
   }
 
   joinRoom(roomId) {
     if (this.socket && this.connected) {
       this.socket.emit("join-room", roomId);
-      console.log("Joined room:", roomId);
     }
   }
 
   leaveRoom(roomId) {
     if (this.socket && this.connected) {
       this.socket.emit("leave-room", roomId);
-      console.log("Left room:", roomId);
     }
   }
 
   sendMessage(roomId, message) {
     if (this.socket && this.connected) {
       this.socket.emit("send-message", { roomId, message });
-      console.log("Message sent to room:", roomId);
     }
   }
 
   deleteMessage(roomId, messageId) {
     if (this.socket && this.connected) {
       this.socket.emit("delete-message", { roomId, messageId });
-      console.log("Delete message request sent:", messageId);
     }
   }
 
@@ -157,6 +152,22 @@ class SocketService {
   offNewMessage() {
     if (this.socket) {
       this.socket.off("new-message");
+    }
+  }
+  checkPayment(roomId) {
+    if (this.socket && this.connect) {
+      this.socket.emit("check-payment", { roomId });
+    }
+  }
+  onPaymentStatus(callback) {
+    if (this.socket) {
+      this.socket.on("payment-status", callback);
+    }
+  }
+
+  offPaymentStatus() {
+    if (this.socket) {
+      this.socket.off("payment-status");
     }
   }
 }
