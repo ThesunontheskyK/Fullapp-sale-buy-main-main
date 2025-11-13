@@ -6,15 +6,22 @@ const ChatRoom = require('../models/ChatRoom');
 // ChatMessage - ไม่ต้องใช้แล้ว เพราะเก็บข้อความใน ChatRoom.messages
 const Transaction = require('../models/Transaction');
 
-// Helper function: สร้าง RoomID ใหม่
+// Helper function: สร้าง RoomID ใหม่//
 function generateRoomID() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
+
+
 
 // Helper function: สร้าง Message ID ใหม่
 function generateMessageID() {
   return Date.now().toString() + Math.floor(Math.random() * 1000).toString();
 }
+
+
+
+
+
 
 // @route   POST /api/chat/rooms
 // @desc    สร้างห้องแชทใหม่ (ผู้สร้างเพียงคนเดียว คนอื่นเข้าทีหลัง)
@@ -79,6 +86,13 @@ router.post('/rooms', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
+
+
 
 // @route   POST /api/chat/rooms/:roomCode/join
 // @desc    เข้าร่วมห้องแชทด้วยรหัสห้อง (ระบบกำหนด role ให้อัตโนมัติ)
@@ -166,6 +180,10 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
   }
 });
 
+
+
+
+
 // @route   GET /api/chat/rooms
 // @desc    ดึงรายการห้องแชททั้งหมดของผู้ใช้
 // @access  Private
@@ -200,6 +218,12 @@ router.get('/rooms', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
+
 
 // @route   GET /api/chat/rooms/:roomId
 // @desc    ดึงข้อมูลห้องแชท (ใช้ RoomID แทน _id)
@@ -240,6 +264,11 @@ router.get('/rooms/:roomId', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
 
 // @route   POST /api/chat/rooms/:roomId/messages
 // @desc    ส่งข้อความในห้องแชท (ตามโครงสร้าง frontend)
@@ -314,6 +343,16 @@ router.post('/rooms/:roomId/messages', protect, async (req, res, next) => {
   }
 });
 
+
+
+
+
+
+
+
+
+
+
 // @route   GET /api/chat/rooms/:roomId/messages
 // @desc    ดึงข้อความทั้งหมดในห้องแชท
 // @access  Private
@@ -351,6 +390,14 @@ router.get('/rooms/:roomId/messages', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
+
+
+
 
 // @route   DELETE /api/chat/rooms/:roomId/messages/:messageId
 // @desc    ลบข้อความในห้องแชท (เฉพาะเจ้าของข้อความ)
@@ -411,6 +458,12 @@ router.delete('/rooms/:roomId/messages/:messageId', protect, async (req, res, ne
   }
 });
 
+
+
+
+
+
+
 // @route   PUT /api/chat/rooms/:roomId/complete
 // @desc    ยืนยันการได้รับของและเสร็จสิ้นการซื้อขาย
 // @access  Private
@@ -467,6 +520,13 @@ router.put('/rooms/:roomId/complete', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
+
+
 
 // @route   PUT /api/chat/rooms/:roomId/quotation/:messageId
 // @desc    ตอบรับ/ปฏิเสธใบเสนอราคา
