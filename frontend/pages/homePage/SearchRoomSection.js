@@ -12,7 +12,7 @@ export default function SearchRoomSection({
 }) {
   return (
     <View className="w-full flex justify-center items-center px-4 py-8 pb-10">
-      <View className="w-full h-[50px] border border-black/30 rounded-md flex flex-row items-center px-1">
+      <View className="w-full h-[50px] border border-black/30 rounded-full flex flex-row items-center px-1">
         <View className="w-1/5 h-full flex justify-center items-center">
           <EvilIcons name="search" size={40} color="#125c91" />
         </View>
@@ -32,7 +32,7 @@ export default function SearchRoomSection({
         </View>
         <Pressable
           onPress={handleInput}
-          className="w-1/5 h-[90%] bg-[#125c91] flex justify-center items-center rounded-md"
+          className="w-1/5 h-[90%] bg-[#125c91] flex justify-center items-center rounded-full"
         >
           <Text className="text-lg font-medium text-white">ค้นหา</Text>
         </Pressable>

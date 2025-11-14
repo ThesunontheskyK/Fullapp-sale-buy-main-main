@@ -40,7 +40,7 @@ import { handleCancelDelivery } from "./handlers/deliveryHandlers";
 import { getRoomStatus } from "./helpers/roomHelpers";
 
 export default function RoomPage({ navigation, route }) {
-  // 1. รับค่าจาก route.params
+
   const { userId, Idroom, room_number, role } = route.params || {};
 
   const insets = useSafeAreaInsets();
@@ -102,11 +102,11 @@ export default function RoomPage({ navigation, route }) {
   };
 
   const handleConfirm = () => {
-    handleConfirmDelivery(setMessages);
+    handleConfirmDelivery(roomId);
   };
 
   const handleCancel = () => {
-    handleCancelDelivery(setMessages);
+    handleCancelDelivery(roomId);
   }
 
   const handleCopy = async () => {

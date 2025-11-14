@@ -10,7 +10,7 @@ const getApiUrl = () => {
   // ถ้าต้องการใช้ IP address เฉพาะ (สำหรับ Physical Device)
   // ให้เปลี่ยนค่านี้เป็น IP ของเครื่องคอมพิวเตอร์ที่รัน Backend
   // เช่น 'http://192.168.1.100:5000/api'
-  const CUSTOM_IP = 'http://10.104.185.216:5000/api';
+  const CUSTOM_IP = 'http://10.241.45.216:5000/api';
 
   if (CUSTOM_IP) {
     return CUSTOM_IP;
@@ -18,7 +18,7 @@ const getApiUrl = () => {
 
   if (Platform.OS === 'android') {
     // Android Emulator ใช้ 10.0.2.2 เพื่อเชื่อมต่อกับ localhost ของเครื่อง host
-    return 'http://10.104.185.216:5000/api';
+    return 'http://10.241.45.216:5000/api';
   } else if (Platform.OS === 'ios') {
     // iOS Simulator ใช้ localhost ได้
     return 'http://localhost:5000/api';
