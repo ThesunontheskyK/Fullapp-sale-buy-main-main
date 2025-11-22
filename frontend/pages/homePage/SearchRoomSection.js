@@ -39,7 +39,7 @@ export default function SearchRoomSection({
       </View>
 
       {notFound && (
-        <Text className="text-red-500 text-sm mt-2 absolute bottom-2 text-center">
+        <Text className="text-red-600 text-sm mt-2 absolute bottom-2 text-center font-semibold">
           {errorRoom}
         </Text>
       )}

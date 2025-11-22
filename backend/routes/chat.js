@@ -11,17 +11,9 @@ function generateRoomID() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-
-
-// Helper function: สร้าง Message ID ใหม่
 function generateMessageID() {
   return Date.now().toString() + Math.floor(Math.random() * 1000).toString();
 }
-
-
-
-
-
 
 // @route   POST /api/chat/rooms
 // @desc    สร้างห้องแชทใหม่ (ผู้สร้างเพียงคนเดียว คนอื่นเข้าทีหลัง)
@@ -101,7 +93,6 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
   try {
     const { roomCode } = req.params;
 
-    // ค้นหาห้องแชทด้วย RoomID
     const chatRoom = await ChatRoom.findOne({ RoomID: roomCode });
 
     if (!chatRoom) {
@@ -112,7 +103,8 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
     }
 
     if (chatRoom.users && chatRoom.users.has(req.user.id)) {
-      return res.status(200).json({
+
+      return res.status(404).json({
         success: false,
         message: 'คุณเป็นสมาชิกห้องนี้อยู่แล้ว'
       });

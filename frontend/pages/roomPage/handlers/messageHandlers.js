@@ -14,8 +14,9 @@ export const sendTextMessage = async (roomId, inputText, setInputText) => {
       type: "text",
     });
 
-    if (response.data.success) {
+    if (response.status === 201) {
       const newMsg = response.data.data.message;
+      
       socketService.sendMessage(roomId, newMsg);
     }
   } catch (error) {

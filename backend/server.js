@@ -69,7 +69,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handler (ต้องอยู่หลังสุด)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
@@ -97,19 +96,16 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('user-joined', { socketId: socket.id });
   });
 
-  // ส่งข้อความ
   socket.on('send-message', (data) => {
     const { roomId, message } = data;
     console.log(`Message sent to room ${roomId}:`, message);
-    // ส่งข้อความไปยังทุกคนในห้อง (รวมตัวเอง)
     io.to(roomId).emit('receive-message', message);
   });
 
-  // ลบข้อความ
   socket.on('delete-message', (data) => {
     const { roomId, messageId } = data;
     console.log(`Message ${messageId} deleted in room ${roomId}`);
-    // แจ้งทุกคนในห้องว่ามีข้อความถูกลบ (รวมตัวเอง)
+
     io.to(roomId).emit('message-deleted', { messageId, roomId });
   });
 

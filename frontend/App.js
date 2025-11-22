@@ -31,6 +31,7 @@ export default function App() {
         
         const token = await getItem('token');
         const storedUserId = await getItem('user_id');
+        console.log(storedUserId)
         setUserId(storedUserId);
 
         if (!token || String(token || '').trim() === "" || !storedUserId || String(storedUserId || '').trim() === "") {
