@@ -28,6 +28,7 @@ export const handleConfirmDelivery = async (roomId) => {
 export const handleCancelDelivery = async (setMessages) => {
 
   const messageText = "ผู้ซื้อยกเลิกสินค้า กรุณาติดต่อผู้ซื้อ";
+  
   try {
     const response = await api.post(`/chat/rooms/${roomId}/messages`, {
       text: messageText,

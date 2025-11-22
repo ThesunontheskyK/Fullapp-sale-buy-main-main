@@ -4,53 +4,52 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import api from "../../config/api";
 
-export default function Login({ navigation , route }) {
-
+export default function Login({ navigation, route }) {
   const { setUserId } = route.params || {};
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-const handleLogin = async () => {
-  if (!email?.trim() || !password?.trim()) {
-    setError("กรุณากรอก email และ password");
-    return;
-  }
-
-  try {
-    const response = await api.post("/auth/login", {
-      email: email.trim(),
-      password: password,
-    });
-
-    if (response.status === 200 && response.data.success) {
-      const { token, user } = response.data.data;
-
-      setUserId(user.id);
-
-      await SecureStore.setItemAsync("token", token);
-      await SecureStore.setItemAsync("user_id", user.id);
-
-      setError("");
-      navigation.navigate("Home", { email });
+  const handleLogin = async () => {
+    if (!email?.trim() || !password?.trim()) {
+      setError("กรุณากรอก email และ password");
+      return;
     }
 
-  } catch (error) {
-    console.log("Login error:", error.response?.data || error.message);
+    try {
+      const response = await api.post("/auth/login", {
+        email: email.trim(),
+        password: password,
+      });
 
-    if (error.response?.status === 401) {
-      setError("Email หรือ Password ไม่ถูกต้อง");
-    } else if (error.response?.data?.message) {
-      setError(error.response.data.message);
-    } else if (error.message.includes("Network")) {
-      setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
-    } else {
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      if (response.status === 200 && response.data.success) {
+        const { token, user } = response.data.data;
+
+        setUserId(user.id);
+
+        await SecureStore.setItemAsync("token", token);
+        await SecureStore.setItemAsync("user_id", user.id);
+
+        setError("");
+        navigation.navigate("Home", { email });
+      }
+    } catch (error) {
+
+      if (error.response) {
+
+        const errorMessage = error.response.data?.message ;
+        
+        setError(errorMessage);
+
+      } else if (error.request) {
+        setError( "Network error or request failed. Please check your connection.");
+
+      } else {
+        setError("An unexpected error occurred while setting up the request.");
+      }
     }
-  }
-};
-
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>

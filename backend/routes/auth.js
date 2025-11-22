@@ -77,31 +77,19 @@ router.post('/register', async (req, res, next) => {
 // @access  Public
 router.post('/login', async (req, res, next) => {
   try {
-    const { email, password } = req.body;
 
-    // ตรวจสอบข้อมูล
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'กรุณากรอก email และ password'
-      });
-    }
+    const { email, password } = req.body;
 
     // หา user และเลือก password ด้วย
     const user = await User.findOne({ email }).select('+password');
 
-    if (!user) {
-      return res.status(500).json({
-        success: false,
-        message: 'Email หรือ Password ไม่ถูกต้อง'
-      });
-    }
+    if(!user) return res.status(404).json({success: false , message: "Email หรือ Password "})
 
     // ตรวจสอบ password
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      return res.status(500).json({
+      return res.status(404).json({
         success: false,
         message: 'Email หรือ Password ไม่ถูกต้อง'
       });

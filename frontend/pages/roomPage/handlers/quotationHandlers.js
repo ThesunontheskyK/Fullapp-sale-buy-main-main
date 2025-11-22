@@ -29,6 +29,7 @@ export const sendQuotation = async (
 
     if (response.data.success) {
       const newMsg = response.data.data.message;
+      
       setMessages((prev) => [...prev, newMsg]);
       socketService.sendMessage(roomId, newMsg);
 

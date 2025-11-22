@@ -53,15 +53,9 @@ export default function RoomPage({ navigation, route }) {
 
   const height = useHeaderHeight();
 
-  // 2. ใช้ Custom Hooks
-  const {
-    room,
-    loading,
-    currentUserId,
-    currentUserRole,
-    messages,
-    setMessages,
-  } = useRoomData(roomId, userId, role);
+  
+  const { room, loading, currentUserId, currentUserRole, messages, setMessages, } = useRoomData(roomId, userId, role);
+
 
   useSocket(roomId, setMessages);
 
@@ -113,11 +107,7 @@ export default function RoomPage({ navigation, route }) {
     await Clipboard.setStringAsync(roomId);
   };
 
-  const {
-    pendingQuotations,
-    hasSentQuotation,
-    showDeliveryButton,
-  } = getRoomStatus(messages, currentUserId, currentUserRole);
+  const { pendingQuotations, hasSentQuotation, showDeliveryButton, } = getRoomStatus(messages, currentUserId, currentUserRole);
 
   if (loading) {
     return (

@@ -54,6 +54,7 @@ export default function HomePage({ navigation, route }) {
   };
 
   const joinRoomWithCode = async (roomCode) => {
+
     try {
       setIsLoading(true);
       const response = await api.post(`/chat/rooms/${roomCode}/join`);
@@ -70,7 +71,7 @@ export default function HomePage({ navigation, route }) {
         });
       }
     } catch (error) {
-      console.error("Error joining room:", error);
+      
       setNotFound(true);
       setErrorRoom(
         error.response?.data?.message || "ไม่พบห้องนี้ กรุณาตรวจสอบรหัสอีกครั้ง"
@@ -115,11 +116,6 @@ export default function HomePage({ navigation, route }) {
       }
     } catch (error) {
       console.error("Error creating room:", error);
-      Alert.alert(
-        "ข้อผิดพลาด",
-        error.response?.data?.message ||
-          "ไม่สามารถสร้างห้องได้ กรุณาลองใหม่อีกครั้ง"
-      );
     } finally {
       setIsLoading(false);
     }
