@@ -6,12 +6,11 @@ const ChatRoom = require('../models/ChatRoom');
 // ChatMessage - ไม่ต้องใช้แล้ว เพราะเก็บข้อความใน ChatRoom.messages
 const Transaction = require('../models/Transaction');
 
-// Helper function: สร้าง RoomID ใหม่
+// Helper function: สร้าง RoomID ใหม่//
 function generateRoomID() {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
-// Helper function: สร้าง Message ID ใหม่
 function generateMessageID() {
   return Date.now().toString() + Math.floor(Math.random() * 1000).toString();
 }
@@ -80,6 +79,13 @@ router.post('/rooms', protect, async (req, res, next) => {
   }
 });
 
+
+
+
+
+
+
+
 // @route   POST /api/chat/rooms/:roomCode/join
 // @desc    เข้าร่วมห้องแชทด้วยรหัสห้อง (ระบบกำหนด role ให้อัตโนมัติ)
 // @access  Private
@@ -87,7 +93,6 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
   try {
     const { roomCode } = req.params;
 
-    // ค้นหาห้องแชทด้วย RoomID
     const chatRoom = await ChatRoom.findOne({ RoomID: roomCode });
 
     if (!chatRoom) {
@@ -97,9 +102,9 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
       });
     }
 
-    // ตรวจสอบว่าผู้ใช้เข้าห้องนี้แล้วหรือยัง
     if (chatRoom.users && chatRoom.users.has(req.user.id)) {
-      return res.status(400).json({
+
+      return res.status(404).json({
         success: false,
         message: 'คุณเป็นสมาชิกห้องนี้อยู่แล้ว'
       });
@@ -167,25 +172,31 @@ router.post('/rooms/:roomCode/join', protect, async (req, res, next) => {
   }
 });
 
+
+
+
+
 // @route   GET /api/chat/rooms
 // @desc    ดึงรายการห้องแชททั้งหมดของผู้ใช้
 // @access  Private
+// @route   GET /api/chat/rooms
 router.get('/rooms', protect, async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // ค้นหาห้องแชทที่ user เป็นสมาชิก
-    const allRooms = await ChatRoom.find({ status: 'active' });
+    const allRooms = await ChatRoom.find({ status: 'active' })
+      .select('RoomID roomName users messages status trackingNumber updatedAt');
 
     const chatRooms = allRooms.filter(room => {
-      return room.users && room.users.has(userId);
+      return room.users && (room.users.has?.(userId) || room.users[userId]);
     });
 
-    // แปลง Map เป็น Object สำหรับส่ง response
+    // ⬇️ แก้ตรงนี้!
     const formattedRooms = chatRooms.map(room => ({
       RoomID: room.RoomID,
-      users: Object.fromEntries(room.users || new Map()),
-      messages: Object.fromEntries(room.messages || new Map()),
+      roomName: room.roomName,
+      users: Object.fromEntries(room.users instanceof Map ? room.users : Object.entries(room.users || {})),
+      messages: Object.fromEntries(room.messages instanceof Map ? room.messages : Object.entries(room.messages || {})),
       status: room.status,
       trackingNumber: room.trackingNumber,
       updatedAt: room.updatedAt
@@ -199,6 +210,12 @@ router.get('/rooms', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
+
 
 // @route   GET /api/chat/rooms/:roomId
 // @desc    ดึงข้อมูลห้องแชท (ใช้ RoomID แทน _id)
@@ -227,6 +244,7 @@ router.get('/rooms/:roomId', protect, async (req, res, next) => {
       data: {
         chatRoom: {
           RoomID: chatRoom.RoomID,
+          roomName: chatRoom.roomName,
           users: Object.fromEntries(chatRoom.users || new Map()),
           messages: Object.fromEntries(chatRoom.messages || new Map()),
           status: chatRoom.status,
@@ -238,6 +256,11 @@ router.get('/rooms/:roomId', protect, async (req, res, next) => {
     next(error);
   }
 });
+
+
+
+
+
 
 // @route   POST /api/chat/rooms/:roomId/messages
 // @desc    ส่งข้อความในห้องแชท (ตามโครงสร้าง frontend)
@@ -312,79 +335,20 @@ router.post('/rooms/:roomId/messages', protect, async (req, res, next) => {
   }
 });
 
-// @route   POST /api/chat/rooms/:roomId/messages/upload
-// @desc    ส่งข้อความพร้อมรูปภาพในห้องแชท
-// @access  Private
-router.post('/rooms/:roomId/messages/upload', protect, uploadChatImage, async (req, res, next) => {
-  try {
-    const { text } = req.body;
-    const roomId = req.params.roomId;
 
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'กรุณาอัพโหลดรูปภาพ'
-      });
-    }
 
-    // ดึงข้อมูลห้องแชท
-    const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
 
-    if (!chatRoom) {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบห้องแชท'
-      });
-    }
 
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชทหรือไม่
-    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์ส่งข้อความในห้องแชทนี้'
-      });
-    }
 
-    // สร้าง URL ของรูปภาพ
-    const imageUrl = `/uploads/chat/${req.file.filename}`;
 
-    // สร้าง message ID
-    const messageId = generateMessageID();
 
-    // สร้างข้อความใหม่
-    const newMessage = {
-      id: messageId,
-      sender_id: req.user.id,
-      text: text || '[รูปภาพ]',
-      timestamp: Math.floor(Date.now() / 1000),
-      type: 'image',
-      imageUrl: imageUrl  // เพิ่ม URL รูปภาพ
-    };
 
-    // เพิ่มข้อความลงใน messages Map
-    if (!chatRoom.messages) {
-      chatRoom.messages = new Map();
-    }
-    chatRoom.messages.set(messageId, newMessage);
 
-    await chatRoom.save();
-
-    res.status(201).json({
-      success: true,
-      message: 'ส่งรูปภาพสำเร็จ',
-      data: {
-        message: newMessage,
-        RoomID: roomId
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
 // @route   GET /api/chat/rooms/:roomId/messages
 // @desc    ดึงข้อความทั้งหมดในห้องแชท
 // @access  Private
+
 router.get('/rooms/:roomId/messages', protect, async (req, res, next) => {
   try {
     const roomId = req.params.roomId;
@@ -419,20 +383,20 @@ router.get('/rooms/:roomId/messages', protect, async (req, res, next) => {
   }
 });
 
-// @route   PUT /api/chat/rooms/:roomId/tracking
-// @desc    อัพเดทเลขพัสดุ
-// @access  Private
-router.put('/rooms/:roomId/tracking', protect, async (req, res, next) => {
-  try {
-    const { trackingNumber } = req.body;
-    const roomId = req.params.roomId;
 
-    if (!trackingNumber) {
-      return res.status(400).json({
-        success: false,
-        message: 'กรุณาระบุเลขพัสดุ'
-      });
-    }
+
+
+
+
+
+
+
+// @route   DELETE /api/chat/rooms/:roomId/messages/:messageId
+// @desc    ลบข้อความในห้องแชท (เฉพาะเจ้าของข้อความ)
+// @access  Private
+router.delete('/rooms/:roomId/messages/:messageId', protect, async (req, res, next) => {
+  try {
+    const { roomId, messageId } = req.params;
 
     // ดึงข้อมูลห้องแชท
     const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
@@ -448,41 +412,49 @@ router.put('/rooms/:roomId/tracking', protect, async (req, res, next) => {
     if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
       return res.status(403).json({
         success: false,
-        message: 'คุณไม่มีสิทธิ์แก้ไขห้องแชทนี้'
+        message: 'คุณไม่มีสิทธิ์เข้าถึงห้องแชทนี้'
       });
     }
 
-    // อัพเดทเลขพัสดุ
-    chatRoom.trackingNumber = trackingNumber;
-    await chatRoom.save();
-
-    // สร้างข้อความระบบแจ้งเตือน
-    const messageId = generateMessageID();
-    const systemMessage = {
-      id: messageId,
-      type: 'system',
-      text: `ผู้ขายได้กรอกเลขขนส่ง: ${trackingNumber}`,
-      timestamp: Math.floor(Date.now() / 1000)
-    };
-
-    if (!chatRoom.messages) {
-      chatRoom.messages = new Map();
+    // ตรวจสอบว่าข้อความนี้มีอยู่จริง
+    const message = chatRoom.messages.get(messageId);
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบข้อความที่ต้องการลบ'
+      });
     }
-    chatRoom.messages.set(messageId, systemMessage);
+
+    // ตรวจสอบว่าผู้ใช้เป็นเจ้าของข้อความหรือไม่
+    if (message.sender_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'คุณไม่มีสิทธิ์ลบข้อความนี้ เฉพาะผู้ส่งเท่านั้นที่สามารถลบได้'
+      });
+    }
+
+    // ลบข้อความออกจาก Map
+    chatRoom.messages.delete(messageId);
     await chatRoom.save();
 
     res.status(200).json({
       success: true,
-      message: 'อัพเดทเลขพัสดุสำเร็จ',
+      message: 'ลบข้อความสำเร็จ',
       data: {
-        trackingNumber,
-        systemMessage
+        messageId,
+        RoomID: roomId
       }
     });
   } catch (error) {
     next(error);
   }
 });
+
+
+
+
+
+
 
 // @route   PUT /api/chat/rooms/:roomId/complete
 // @desc    ยืนยันการได้รับของและเสร็จสิ้นการซื้อขาย
@@ -541,70 +513,53 @@ router.put('/rooms/:roomId/complete', protect, async (req, res, next) => {
   }
 });
 
+
+
+
+
+
+
+
 // @route   PUT /api/chat/rooms/:roomId/quotation/:messageId
 // @desc    ตอบรับ/ปฏิเสธใบเสนอราคา
 // @access  Private
 router.put('/rooms/:roomId/quotation/:messageId', protect, async (req, res, next) => {
-  try {
-    const { status } = req.body; // true = accept, false = reject
-    const { roomId, messageId } = req.params;
+    try {
+        const { roomId, messageId } = req.params;
+        const newStatus = true; // ตั้งค่าสถานะเป็น true ตามที่คุณต้องการ
 
-    // ดึงข้อมูลห้องแชท
-    const chatRoom = await ChatRoom.findOne({ RoomID: roomId });
+        const updatePath = `messages.${messageId}.quotation.status`;
 
-    if (!chatRoom) {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบห้องแชท'
-      });
+        const result = await ChatRoom.updateOne(
+            { 
+                RoomID: roomId,
+
+                [`messages.${messageId}.type`]: 'quotation' 
+            },
+            {
+                $set: { 
+                    [updatePath]: newStatus 
+                }
+            }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'ไม่พบห้องแชท หรือ ใบเสนอราคาที่ต้องการ' });
+        }
+
+        if (result.modifiedCount === 0) {
+            return res.status(200).json({ success: true, message: 'สถานะถูกตั้งค่าเป็น true อยู่แล้ว' });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `สถานะ quotation ID ${messageId} ถูกอัปเดตเป็น true เรียบร้อยแล้ว`,
+            data: result
+        });
+
+    } catch (error) {
+        next(error);
     }
-
-    // ตรวจสอบว่าผู้ใช้เป็นสมาชิกของห้องแชทหรือไม่
-    if (!chatRoom.users || !chatRoom.users.has(req.user.id)) {
-      return res.status(403).json({
-        success: false,
-        message: 'คุณไม่มีสิทธิ์แก้ไขห้องแชทนี้'
-      });
-    }
-
-    // หาข้อความที่เป็น quotation
-    const message = chatRoom.messages.get(messageId);
-
-    if (!message || message.type !== 'quotation') {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบใบเสนอราคา'
-      });
-    }
-
-    // อัพเดทสถานะ quotation
-    message.quotation.status = status;
-    chatRoom.messages.set(messageId, message);
-    await chatRoom.save();
-
-    // สร้างข้อความระบบแจ้งเตือน
-    const systemMessageId = generateMessageID();
-    const systemMessage = {
-      id: systemMessageId,
-      type: 'system',
-      text: status ? 'ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ' : 'ผู้ซื้อปฏิเสธใบเสนอราคา',
-      timestamp: Math.floor(Date.now() / 1000)
-    };
-
-    chatRoom.messages.set(systemMessageId, systemMessage);
-    await chatRoom.save();
-
-    res.status(200).json({
-      success: true,
-      message: status ? 'ยอมรับใบเสนอราคาสำเร็จ' : 'ปฏิเสธใบเสนอราคาสำเร็จ',
-      data: {
-        message,
-        systemMessage
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
 });
 
 // เก็บ Transaction endpoints เดิมไว้ (ยังใช้งานได้)

@@ -31,13 +31,13 @@ export default function App() {
         
         const token = await getItem('token');
         const storedUserId = await getItem('user_id');
-
+        console.log(storedUserId)
         setUserId(storedUserId);
 
-        if (!token || String(token || '').trim() === "" || !storedUserId) {
+        if (!token || String(token || '').trim() === "" || !storedUserId || String(storedUserId || '').trim() === "") {
           setInitialRoute('Login');
         } else {
-          setInitialRoute('Login');
+          setInitialRoute('Home');
         }
       } catch (error) {
         setInitialRoute('Login');
@@ -45,7 +45,7 @@ export default function App() {
     }
 
     checkToken();
-  }, []);
+  }, [userId]);
 
   if (!initialRoute) {
     return (
@@ -65,7 +65,7 @@ export default function App() {
         }}
       >
         <Stack.Screen name="Register" component={Register}/>
-        <Stack.Screen name="Login" component={LoginPage} initialParams={{ userId: userId }} />
+        <Stack.Screen name="Login" component={LoginPage} initialParams={{setUserId : setUserId}} />
         <Stack.Screen name="OTP" component={OTP}/>
         <Stack.Screen name="Terms" component={Terms}/>
         <Stack.Screen name="Home" component={HomePage} initialParams={{ userId: userId }} />

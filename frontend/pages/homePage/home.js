@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
-  Platform,
-  ScrollView,
-  Alert,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Nav from "../nav";
@@ -38,6 +36,7 @@ export default function HomePage({ navigation, route }) {
   const [errorRoom, setErrorRoom] = useState("");
   const [errorRoomName, setErrorRoomName] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   // --------------------------
   // Handlers
@@ -51,40 +50,32 @@ export default function HomePage({ navigation, route }) {
       return;
     }
 
-    // เข้าห้องเลยโดยไม่ต้องเลือก role (ระบบจะกำหนดให้)
     await joinRoomWithCode(Idroom);
   };
 
   const joinRoomWithCode = async (roomCode) => {
+
     try {
       setIsLoading(true);
       const response = await api.post(`/chat/rooms/${roomCode}/join`);
 
-      if (response.data.success) {
-        const assignedRole = response.data.data.assignedRole;
+      if (response.data.success === true) {
         setNotFound(false);
         setErrorRoom("");
         setIdroom("");
 
-        const roleName = assignedRole === 'buyer' ? 'ผู้ซื้อ' : 'ผู้ขาย';
-        Alert.alert(
-          "เข้าร่วมห้องสำเร็จ",
-          `คุณเข้าร่วมห้องในฐานะ ${roleName}`,
-          [
-            {
-              text: "เข้าสู่ห้องแชท",
-              onPress: () => navigation.navigate("Room", {
-                Idroom: roomCode,
-                role: assignedRole
-              })
-            }
-          ]
-        );
+        return navigation.navigate("Room", {
+          Idroom: roomCode,
+          role: response.data.data.role,
+          userId: userId,
+        });
       }
     } catch (error) {
-      console.error("Error joining room:", error);
+      
       setNotFound(true);
-      setErrorRoom(error.response?.data?.message || "ไม่พบห้องนี้ กรุณาตรวจสอบรหัสอีกครั้ง");
+      setErrorRoom(
+        error.response?.data?.message || "ไม่พบห้องนี้ กรุณาตรวจสอบรหัสอีกครั้ง"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -106,10 +97,10 @@ export default function HomePage({ navigation, route }) {
     try {
       setIsLoading(true);
       const currentRole = selectedRole;
-      // เรียก API สร้างห้องแชท
-      const response = await api.post('/chat/rooms', {
+
+      const response = await api.post("/chat/rooms", {
         role: currentRole,
-        roomName: businessName
+        roomName: businessName,
       });
 
       if (response.data.success) {
@@ -125,7 +116,6 @@ export default function HomePage({ navigation, route }) {
       }
     } catch (error) {
       console.error("Error creating room:", error);
-      Alert.alert("ข้อผิดพลาด", error.response?.data?.message || "ไม่สามารถสร้างห้องได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsLoading(false);
     }
@@ -141,22 +131,39 @@ export default function HomePage({ navigation, route }) {
     setRoomCodeModalVisible(false);
     navigation.navigate("Room", {
       Idroom: createdRoomCode,
-      role: createdRoomRole
+      role: createdRoomRole,
     });
   };
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   // --------------------------
   // Render
   // --------------------------
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={["top", "bottom"]}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-          <View className="flex-1 overflow-hidden">
-            <ScrollView
+    <SafeAreaView className="flex-1 bg-white " edges={["bottom"]}>
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
+
+      <KeyboardAvoidingView className="flex-1" behavior={"padding"}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View className="flex-1">
+            <View
               className="flex-1"
               contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
               keyboardShouldPersistTaps="handled"
@@ -176,10 +183,6 @@ export default function HomePage({ navigation, route }) {
               <ActionButtons handleCreate={handleCreate} />
 
               <PromotionSection />
-            </ScrollView>
-
-            <View className="absolute bottom-0 left-0 right-0">
-              <Nav navigation={navigation} />
             </View>
 
             <RoleSelectionModal
@@ -205,6 +208,11 @@ export default function HomePage({ navigation, route }) {
             />
           </View>
         </TouchableWithoutFeedback>
+        {!keyboardVisible && (
+          <View className="absolute bottom-0 left-0 right-0">
+            <Nav navigation={navigation} />
+          </View>
+        )}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

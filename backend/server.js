@@ -24,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/chat', require('./routes/chat'));
+app.use('/api/payment', require('./routes/payment'));
 
 // Root route
 app.get('/', (req, res) => {
@@ -50,6 +51,13 @@ app.get('/', (req, res) => {
         completeRoom: 'PUT /api/chat/rooms/:roomId/complete (Protected) - ยืนยันการได้รับของ',
         updateQuotation: 'PUT /api/chat/rooms/:roomId/quotation/:messageId (Protected) - อัพเดทใบเสนอราคา'
       },
+      payment: {
+        createFromQuotation: 'POST /api/payment/create-from-quotation (Protected) - สร้างรายการชำระเงินจากใบเสนอราคา',
+        getPaymentsByRoom: 'GET /api/payment/room/:roomId (Protected) - ดึงข้อมูลรายการชำระเงินของห้อง',
+        getPaymentById: 'GET /api/payment/:id (Protected) - ดึงข้อมูลรายการชำระเงินจาก ID',
+        getMyPayments: 'GET /api/payment/my-payments (Protected) - ดึงข้อมูลรายการชำระเงินของผู้ใช้',
+        getQuotationDetails: 'GET /api/payment/quotation/:roomId/:messageId (Protected) - ดึงข้อมูลรายละเอียดใบเสนอราคา'
+      },
       socketIO: {
         events: 'Socket.io real-time events available',
         joinRoom: 'join-room - เข้าร่วมห้องแชท',
@@ -61,19 +69,12 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error handler (ต้องอยู่หลังสุด)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  console.log(`
-╔════════════════════════════════════════╗
-║   SavePro Backend Server Running      ║
-║   Port: ${PORT}                           ║
-║   Environment: ${process.env.NODE_ENV}           ║
-╚════════════════════════════════════════╝
-  `);
+    console.log(`Server running on PORT : ` , PORT);
 });
 
 // ตั้งค่า Socket.io
@@ -95,12 +96,17 @@ io.on('connection', (socket) => {
     socket.to(roomId).emit('user-joined', { socketId: socket.id });
   });
 
-  // ส่งข้อความ
   socket.on('send-message', (data) => {
     const { roomId, message } = data;
     console.log(`Message sent to room ${roomId}:`, message);
-    // ส่งข้อความไปยังทุกคนในห้อง (รวมตัวเอง)
     io.to(roomId).emit('receive-message', message);
+  });
+
+  socket.on('delete-message', (data) => {
+    const { roomId, messageId } = data;
+    console.log(`Message ${messageId} deleted in room ${roomId}`);
+
+    io.to(roomId).emit('message-deleted', { messageId, roomId });
   });
 
   // ออกจากห้องแชท
@@ -108,6 +114,17 @@ io.on('connection', (socket) => {
     socket.leave(roomId);
     console.log(`Socket ${socket.id} left room ${roomId}`);
     socket.to(roomId).emit('user-left', { socketId: socket.id });
+  });
+
+
+  // เช็คการชำระเงิน
+  socket.on('check-payment', (data) => {
+
+    const { roomId } = data;
+    
+    io.to(roomId).emit('payment-status', {
+      status: true
+    });
   });
 
   // Disconnect

@@ -21,6 +21,7 @@ export default function FormInput({
   }
   return (
     <TouchableWithoutFeedback onPress={handleClik}>
+      
       <View>
         <Text className="font-semibold text-sm text-black/70">{label}</Text>
         <View className="relative flex">
@@ -36,7 +37,7 @@ export default function FormInput({
             keyboardType={keyboardType}
             autoCapitalize={autoCapitalize}
             maxLength={maxLength}
-            className="border-b border-black/50 rounded-md py-1 px-2 focus:border-blue-800"
+            className="border-b border-black/50 rounded-md  px-2 focus:border-blue-800  py-2"
           />
           <AntDesign
             className="absolute right-[9px] top-2"

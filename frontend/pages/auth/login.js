@@ -4,20 +4,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import api from "../../config/api";
 
-export default function Login({ navigation }) {
+export default function Login({ navigation, route }) {
+  const { setUserId } = route.params || {};
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    
     if (!email?.trim() || !password?.trim()) {
       setError("กรุณากรอก email และ password");
       return;
     }
 
     try {
-      const response = await api.post('/auth/login', {
+      const response = await api.post("/auth/login", {
         email: email.trim(),
         password: password,
       });
@@ -25,30 +26,28 @@ export default function Login({ navigation }) {
       if (response.status === 200 && response.data.success) {
         const { token, user } = response.data.data;
 
-        // บันทึก token และ user_id
+        setUserId(user.id);
+
         await SecureStore.setItemAsync("token", token);
         await SecureStore.setItemAsync("user_id", user.id);
 
-        // ล้าง error
         setError("");
-
-        // นำทางไปหน้า OTP
-        navigation.navigate("OTP", { email });
+        navigation.navigate("Home", { email });
       }
     } catch (error) {
-      console.log("Login error:", error);
 
-      let errorMessage = "เข้าสู่ระบบไม่สำเร็จ";
+      if (error.response) {
 
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.status === 401) {
-        errorMessage = "Email หรือ Password ไม่ถูกต้อง";
-      } else if (error.message) {
-        errorMessage = "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้";
+        const errorMessage = error.response.data?.message ;
+        
+        setError(errorMessage);
+
+      } else if (error.request) {
+        setError( "Network error or request failed. Please check your connection.");
+
+      } else {
+        setError("An unexpected error occurred while setting up the request.");
       }
-
-      setError(errorMessage);
     }
   };
 

@@ -26,11 +26,13 @@ export default function MessagesPage({ navigation, route }) {
 
       if (response.data.success) {
         const roomsList = response.data.data.chatRooms;
-        // เรียงตาม updatedAt ใหม่สุดก่อน
+
         const sortedRooms = roomsList.sort((a, b) =>
           new Date(b.updatedAt) - new Date(a.updatedAt)
         );
         setRooms(sortedRooms);
+
+        
       }
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -110,7 +112,7 @@ export default function MessagesPage({ navigation, route }) {
                   </View>
                   <View className="flex gap-1 flex-1">
                     <Text className="text-gray-700 font-semibold">
-                      {room.roomName || 'ห้องแชท'}
+                      {room.roomName || ''}
                     </Text>
                     <Text className="text-gray-500 text-sm">
                       รหัสห้อง: {room.RoomID}
