@@ -19,7 +19,11 @@ import RoleSelectionModal from "./RoleSelectionModel";
 import RoomCodeModal from "./RoomCodeModal";
 
 export default function HomePage({ navigation, route }) {
+
+
   const { userId } = route.params || {};
+
+  console.log("HomePage userId: ", userId);
 
   // --------------------------
   // State

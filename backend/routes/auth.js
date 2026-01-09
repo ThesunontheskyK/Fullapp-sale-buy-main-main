@@ -126,6 +126,9 @@ router.get('/me', protect, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
 
+
+    console.log("Authenticated User:", user);
+    
     res.status(200).json({
       success: true,
       data: {

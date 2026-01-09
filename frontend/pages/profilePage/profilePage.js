@@ -1,4 +1,11 @@
-import { Text, View, ScrollView, Pressable, Image, StyleSheet } from "react-native";
+import {
+  Text,
+  View,
+  ScrollView,
+  Pressable,
+  Image,
+  StyleSheet,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect } from "react";
 import AntDesign from "@expo/vector-icons/AntDesign";
@@ -11,11 +18,15 @@ import LogoutPopup from "../profilePage/Logoutpopup";
 
 export default function ProfilePage({ route, navigation }) {
   const { userId } = route.params || {};
+
+  console.log("ProfilePage userId: ", userId);
+
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [popupVisible, setPopupVisible] = useState(false);
 
-  const hasProfileImage = user && user.profileImage && user.profileImage.trim() !== "";
+  const hasProfileImage =
+    user && user.profileImage && user.profileImage.trim() !== "";
   const defaultProfileImage = require("../../assets/defaultProfileImage.png");
 
   useEffect(() => {
@@ -24,10 +35,13 @@ export default function ProfilePage({ route, navigation }) {
     const fetchUser = async () => {
       try {
         setLoading(true);
-        const response = await api.get("/auth/me", { params: { id: userId } });
+
+        const response = await api.get("/auth/me");
+
+        console.log("User Data:", response.data);
         setUser(response.data.data.user);
       } catch (error) {
-        console.log("Server Error:", error.response?.data || error.message);
+        console.log("Server Error : ", error.response?.data || error.message);
       } finally {
         setLoading(false);
       }
@@ -68,7 +82,11 @@ export default function ProfilePage({ route, navigation }) {
               <View style={styles.profileImageWrapper}>
                 <Image
                   style={styles.profileImage}
-                  source={hasProfileImage ? { uri: user.profileImage } : defaultProfileImage}
+                  source={
+                    hasProfileImage
+                      ? { uri: user.profileImage }
+                      : defaultProfileImage
+                  }
                 />
               </View>
 
@@ -91,7 +109,10 @@ export default function ProfilePage({ route, navigation }) {
         </View>
 
         {/* Scroll Menu */}
-        <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.scrollArea}
+          showsVerticalScrollIndicator={false}
+        >
           <Pressable
             style={[styles.menuItem, styles.boxShadow]}
             onPress={() => navigation.navigate("ChangeData", { userId })}
@@ -101,7 +122,9 @@ export default function ProfilePage({ route, navigation }) {
             </View>
             <View style={styles.menuTextContainer}>
               <Text style={styles.menuTitle}>แก้ไขข้อมูลส่วนตัว</Text>
-              <Text style={styles.menuSubtitle}>ลบ แก้ไข หรือข้อมูลส่วนตัว</Text>
+              <Text style={styles.menuSubtitle}>
+                ลบ แก้ไข หรือข้อมูลส่วนตัว
+              </Text>
             </View>
           </Pressable>
 
@@ -131,14 +154,20 @@ export default function ProfilePage({ route, navigation }) {
             </View>
             <View style={styles.menuTextContainer}>
               <Text style={styles.menuTitle}>ช่วยเหลือ & กฎระเบียบ</Text>
-              <Text style={styles.menuSubtitle}>ศูนย์ช่วยเหลือ / FAQ , นโยบายความเป็นส่วนตัว</Text>
+              <Text style={styles.menuSubtitle}>
+                ศูนย์ช่วยเหลือ / FAQ , นโยบายความเป็นส่วนตัว
+              </Text>
             </View>
           </Pressable>
         </ScrollView>
       </View>
 
       <Nav navigation={navigation} />
-      <LogoutPopup visible={popupVisible} onClose={() => setPopupVisible(false)} onConfirm={handleLogout} />
+      <LogoutPopup
+        visible={popupVisible}
+        onClose={() => setPopupVisible(false)}
+        onConfirm={handleLogout}
+      />
     </SafeAreaView>
   );
 }
@@ -154,7 +183,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
   },
-  headerText: { fontSize: 20, fontWeight: "bold", color: "#222", marginRight: 12 },
+  headerText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#222",
+    marginRight: 12,
+  },
 
   profileContainer: { paddingHorizontal: 16, marginTop: 16 },
   loadingText: { textAlign: "center" },
@@ -186,7 +220,12 @@ const styles = StyleSheet.create({
   },
   userInfo: { alignItems: "center" },
   userName: { fontSize: 18, fontWeight: "600", color: "#333" },
-  emailRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  emailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
   emailText: { fontSize: 14, color: "gray" },
 
   creditRow: {

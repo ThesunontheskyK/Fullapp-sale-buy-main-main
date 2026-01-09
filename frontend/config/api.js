@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 
 const getApiUrl = () => {
 
-  const CUSTOM_IP = 'http://10.197.195.216:5000/api';
+  const CUSTOM_IP = 'http://10.137.155.216:5000/api';
 
   if (CUSTOM_IP) {
     return CUSTOM_IP;
@@ -12,7 +12,7 @@ const getApiUrl = () => {
 
   if (Platform.OS === 'android') {
 
-    return 'http://10.197.195.216:5000/api';
+    return 'http://10.137.155.216:5000/api';
   } else if (Platform.OS === 'ios') {
     // iOS Simulator ใช้ localhost ได้
     return 'http://localhost:5000/api';
@@ -43,7 +43,7 @@ api.interceptors.request.use(
       const { getItem } = require('../storage');
       const token = await getItem('token');
       if (token) {
-        // config.headers.Authorization = `Bearer ${token}`;
+        config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
       // console.error('Error getting token:', error);

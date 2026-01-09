@@ -5,6 +5,7 @@ import * as SecureStore from "expo-secure-store";
 import api from "../../config/api";
 
 export default function Login({ navigation, route }) {
+  
   const { setUserId } = route.params || {};
 
   const [email, setEmail] = useState("");

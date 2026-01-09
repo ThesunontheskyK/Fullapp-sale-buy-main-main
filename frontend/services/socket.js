@@ -2,11 +2,12 @@ import { io } from "socket.io-client";
 import { Platform } from "react-native";
 
 const getSocketUrl = () => {
-  const CUSTOM_IP = "http://10.197.195.216:5000";
+  
+  const CUSTOM_IP = "http://10.137.155.216:5000";
 
   if (CUSTOM_IP) return CUSTOM_IP;
 
-  if (Platform.OS === "android") return "http://10.197.195.216:5000";
+  if (Platform.OS === "android") return "http://10.137.155.216:5000";
   if (Platform.OS === "ios") return "http://localhost:5000";
   return "http://localhost:5000";
 };
