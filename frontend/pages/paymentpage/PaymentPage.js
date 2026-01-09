@@ -69,58 +69,59 @@ export default function PaymentPage({ navigation, route }) {
   };
 
   const handleFinalPayment = async () => {
+
     if (!selectedPayment) return;
 
     if (!quotationData) return;
 
     setConfirmModalVisible(true);
 
-    try {
-      const response = await api.put(
-        `/chat/rooms/${roomId}/quotation/${messages}`,
-        { status: true }
-      );
+    // try {
+    //   const response = await api.put(
+    //     `/chat/rooms/${roomId}/quotation/${messages}`,
+    //     { status: true }
+    //   );
 
-      if (response.status === 200) {
-        console.log("updata status payment success");
+    //   if (response.status === 200) {
+    //     console.log("updata status payment success");
 
-        try {
-          const messageText = "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลย";
+    //     try {
+    //       const messageText = "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลย";
 
-          const response = await api.post(`/chat/rooms/${roomId}/messages`, {
-            text: messageText,
-            type: "system",
-          });
+    //       const response = await api.post(`/chat/rooms/${roomId}/messages`, {
+    //         text: messageText,
+    //         type: "system",
+    //       });
 
-          if (response.data.success) {
+    //       if (response.data.success) {
 
-            const PaymentMsg = {
-              id: (Date.now() + 1).toString(),
-              type: "system",
-              text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
-              timestamp: Math.floor(Date.now() / 1000),
-            };
+    //         const PaymentMsg = {
+    //           id: (Date.now() + 1).toString(),
+    //           type: "system",
+    //           text: "ชำระเงินเสร็จสิ้น สามารถส่งของได้เลยครับ",
+    //           timestamp: Math.floor(Date.now() / 1000),
+    //         };
 
-            try {
-              const response = await api.put(`/payment/status/${PaymentData._id}`, {
-                status: "confirmed",
-              });
+    //         try {
+    //           const response = await api.put(`/payment/status/${PaymentData._id}`, {
+    //             status: "confirmed",
+    //           });
 
-              if (response.status === 200) {
-                socket.sendMessage(roomId, PaymentMsg);
-                socket.checkPayment(roomId);
-              }
-            } catch (err) {
-              console.log("update Error : ", err);
-            }
-          }
-        } catch (error) {
-          console.error("Error sending message:", error);
-        }
-      }
-    } catch (err) {
-      console.log("updata payment error : ", err);
-    }
+    //           if (response.status === 200) {
+    //             socket.sendMessage(roomId, PaymentMsg);
+    //             socket.checkPayment(roomId);
+    //           }
+    //         } catch (err) {
+    //           console.log("update Error : ", err);
+    //         }
+    //       }
+    //     } catch (error) {
+    //       console.error("Error sending message:", error);
+    //     }
+    //   }
+    // } catch (err) {
+    //   console.log("updata payment error : ", err);
+    // }
   };
 
   const handleConfirmPayment = async () => {
