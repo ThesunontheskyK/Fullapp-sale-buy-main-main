@@ -1,6 +1,8 @@
 import { Text, View , StyleSheet } from "react-native";
 
 export default function ProductDetails({ quotationData , PaymentData }) {
+
+  console.log("Paymentdata : " , PaymentData.price)
   return (
     <View style={styles.boxShadow} className="bg-white mx-4 mt-4 p-4 rounded-lg shadow-sm">
       <Text className="text-lg font-bold text-gray-800 mb-3">

@@ -26,6 +26,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
+
     "plugins": [
       [
         "expo-camera",
@@ -35,8 +36,19 @@
           "recordAudioAndroid": true
         }
       ],
+
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "แอปต้องการเข้าถึงรูปภาพเพื่อบันทึก QR Code",
+          "savePhotosPermission": "แอปต้องการบันทึกรูปลงในเครื่อง",
+          "isAccessMediaLocationEnabled": true
+        }
+      ],
+
       "expo-secure-store"
     ],
+
     "extra": {
       "eas": {
         "projectId": "your-project-id-if-using-eas"
