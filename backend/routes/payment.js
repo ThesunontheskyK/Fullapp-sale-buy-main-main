@@ -338,7 +338,7 @@ router.post("/payment/qr-code", async (req, res) => {
       return res.status(400).json({ success: false, message: "กรุณาระบุ amount",});
     }
 
-    const promptpayId = "0928369316";
+    const promptpayId = "0928369313";
 
     const payload = promptpay(promptpayId,{
       amount:Number(amount)

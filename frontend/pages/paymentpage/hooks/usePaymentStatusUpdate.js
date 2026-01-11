@@ -34,8 +34,6 @@ export const updatePaymentSuccess = async (roomId, messages, paymentId ,navigati
           };
           socket.sendMessage(roomId, paymentMsg);
           socket.checkPayment(roomId);
-
-          navigation.goBack();
           
           return true;
         }

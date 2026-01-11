@@ -4,8 +4,6 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import axios from "axios";
 
-import api from "../../../config/api";
-
 export default function useSlipUpload(totalAmount, visible) {
   const [slipImage, setSlipImage] = useState(null);
   const [uploading, setUploading] = useState(false);
