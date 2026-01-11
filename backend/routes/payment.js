@@ -4,6 +4,12 @@ const Payment = require("../models/Payment");
 const ChatRoom = require("../models/ChatRoom");
 const { protect } = require("../middleware/auth");
 
+
+const promptpay = require("promptpay-qr");
+const QrCode = require("qrcode");
+
+
+
 // @desc    สร้างรายการชำระเงินจากใบเสนอราคา
 // @route   POST /api/payment/create-from-quotation
 // @access  Private
@@ -139,7 +145,6 @@ router.post("/create-from-quotation", protect, async (req, res) => {
   }
 });
 
-
 // @desc    ดึงข้อมูลรายการชำระเงินจาก chatRoom
 // @route   GET /api/payment/room/:roomId
 // @access  Private
@@ -156,7 +161,6 @@ router.get("/room/:roomId", protect, async (req, res) => {
       count: payments.length,
       payments: payments,
     });
-    
   } catch (error) {
     console.error("Error fetching payments:", error);
     res.status(500).json({
@@ -297,32 +301,60 @@ router.get("/quotation/:roomId/:messageId", protect, async (req, res) => {
 // @route   PUT /api/payment/status/:paymentId
 // @access  Private
 
-router.put("/status/:paymentId" , protect , async (req ,res) => {
-   try {
-      const { paymentId } = req.params;
-      const { status } = req.body;
+router.put("/status/:paymentId", protect, async (req, res) => {
+  try {
+    const { paymentId } = req.params;
+    const { status } = req.body;
 
-      const payment = await Payment.findById(paymentId);
-      
-      if( !payment ) {
-        return res.status(404).json({
-          success: false,
-          message: "not found paymentId"
-        });
-      }
-      payment.paymentStatus = status;
+    const payment = await Payment.findById(paymentId);
 
-      if(status === 'confirmed') {
-        payment.updatedAt = new Date();
-      }
-      await payment.save();
+    if (!payment) {
+      return res.status(404).json({
+        success: false,
+        message: "not found paymentId",
+      });
+    }
+    payment.paymentStatus = status;
 
-      res.status(200).json({success: true});
+    if (status === "confirmed") {
+      payment.updatedAt = new Date();
+    }
+    await payment.save();
 
-   }catch(error) {
+    res.status(200).json({ success: true });
+  } catch (error) {
     console.error("Error updating payment status:", error);
-   }
-})
+  }
+});
+
+// @desc    อัพเดทสถานะการชำระเงิน
+// @route   POST /api/payment/payment/qr-code
+// @access  Private
+router.post("/payment/qr-code", async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    if (!amount) {
+      return res.status(400).json({ success: false, message: "กรุณาระบุ amount",});
+    }
+
+    const promptpayId = "0928369316";
+
+    const payload = promptpay(promptpayId,{
+      amount:Number(amount)
+    })
+
+    const qrCode = await QrCode.toDataURL(payload);
+
+    return res.status(200).json({
+      success: true,
+      amount,
+      qrCode
+    })
 
 
+  } catch (err) {
+    next(err)
+  }
+});
 module.exports = router;
