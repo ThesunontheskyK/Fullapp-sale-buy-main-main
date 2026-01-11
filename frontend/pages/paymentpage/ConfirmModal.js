@@ -27,7 +27,7 @@ export default function ConfirmModal({
 
       console.log("status : " , slipStatus)
 
-      if(slipStatus  === "error" ) {
+      if(slipStatus  === "success" ) {
          
         setPayCheck(true);
 
